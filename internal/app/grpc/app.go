@@ -32,3 +32,7 @@ func (a *App) Run() error {
 
 	return nil // temp
 }
+
+func (a *App) Stop() {
+
+}
