@@ -1,15 +1,12 @@
 env: "local"
 grpc:
   port: 44044
+  timeout: 5s
 postgres:
   host: "localhost"
   port: 5432
   user: "myuser"
   dbname: "mydb"
   password: "${POSTGRES_PASSWORD}"
-kafka:
-  brokers:
-    - "localhost:9092"
-  client_id: "my-app"
 webhook:
   port: 8080

@@ -1,9 +1,9 @@
 package models
 
-type PaymentRequest struct {
-	Name        string
-	Description string
-	Amount      string
-	UserID      string
-	AiResponse  bool
+type Payment struct {
+	Name          string
+	Description   string
+	Amount        string
+	PaymentMethod string
+	UserID        string
 }
