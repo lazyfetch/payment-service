@@ -1,0 +1,20 @@
+syntax = "proto3";
+package payment;
+
+option go_package = "payment/gen;payment";
+
+service Payment {
+    rpc GetPaymentUrl(GetPaymentUrlRequest) returns (GetPaymentUrlResponse);
+}
+
+message GetPaymentUrlRequest {
+    string name = 1;
+    string description = 2;
+    string amount = 3;
+    bool ai_response = 4;
+    string UUID = 5; 
+}
+
+message GetPaymentUrlResponse {
+    string payment_link = 1;
+}
