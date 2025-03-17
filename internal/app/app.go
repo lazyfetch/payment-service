@@ -2,16 +2,16 @@ package app
 
 import (
 	grpcapp "payment/internal/app/grpc"
-	"payment/internal/rest/webhook"
 	paymentsrv "payment/internal/service/payment"
+	webhookapp "payment/internal/webhook"
 )
 
 type App struct {
 	GRPCServer *grpcapp.App
-	Webhook    *webhook.App
+	Webhook    *webhookapp.App
 }
 
-func New(webHook int, grpcPort int) *App {
+func New(webHookPort int, grpcPort int) *App {
 
 	// init service layer
 	paymentService := paymentsrv.New()
@@ -20,7 +20,7 @@ func New(webHook int, grpcPort int) *App {
 	grpcApp := grpcapp.New(paymentService, grpcPort)
 
 	// init webhook component
-	webhookApp := webhook.New(webHook)
+	webhookApp := webhookapp.New(webHookPort)
 
 	return &App{GRPCServer: grpcApp, Webhook: webhookApp}
 }

@@ -6,7 +6,7 @@ func main() {
 
 	// TODO: INIT LOGGER
 
-	// TODO: SETUP APP (db, grpc, kafka,)
+	// TODO: SETUP APP (db, kafka, grpc, webhook)
 
 	// TODO: START SERVER
 

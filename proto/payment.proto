@@ -12,7 +12,8 @@ message GetPaymentUrlRequest {
     string description = 2;
     string amount = 3;
     bool ai_response = 4;
-    string UUID = 5; 
+    string UUID = 5;
+    string payment_system = 6; // NOT IMPLEMENTED, NEED GENERATE NEW GO-FILE
 }
 
 message GetPaymentUrlResponse {

@@ -1,8 +1,9 @@
-package webhook
+package webhookapp
 
 import (
 	"fmt"
 	"net/http"
+	"payment/internal/webhook/handlers"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -14,8 +15,7 @@ type App struct {
 func New(port int) *App {
 
 	router := chi.NewRouter()
-
-	// make handler for router
+	router.Get(handlers.RobokassaHandler())
 
 	serverPort := fmt.Sprintf(":%d", port)
 
@@ -37,7 +37,7 @@ func (a *App) MustRun() {
 
 func (a *App) Run() error {
 
-	return nil // temp
+	return a.HTTPServer.ListenAndServe()
 }
 
 func (a *App) Stop() {
