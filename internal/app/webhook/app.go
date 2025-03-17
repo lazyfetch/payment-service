@@ -3,7 +3,7 @@ package webhookapp
 import (
 	"fmt"
 	"net/http"
-	"payment/internal/webhook/handlers"
+	handlers "payment/internal/webhook"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -36,7 +36,6 @@ func (a *App) MustRun() {
 }
 
 func (a *App) Run() error {
-
 	return a.HTTPServer.ListenAndServe()
 }
 

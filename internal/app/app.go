@@ -2,8 +2,8 @@ package app
 
 import (
 	grpcapp "payment/internal/app/grpc"
-	paymentsrv "payment/internal/service/payment"
-	webhookapp "payment/internal/webhook"
+	webhookapp "payment/internal/app/webhook"
+	paymentsrv "payment/internal/service/grpc/payment"
 )
 
 type App struct {
