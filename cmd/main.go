@@ -3,6 +3,7 @@ package main
 import (
 	"log/slog"
 	"os"
+	application "payment/internal/app"
 	"payment/internal/config"
 )
 
@@ -13,15 +14,18 @@ const (
 
 func main() {
 
+	// TODO: INIT CONFIG
 	cfg := config.MustLoad()
 
+	// TODO: INIT LOGGER
 	log := setupLogger(cfg.Env)
 
-	// TODO: INIT LOGGER
-
 	// TODO: SETUP APP (db, kafka, grpc, webhook)
+	app := application.New(log, cfg.Webhook.Port, cfg.GRPC.Port)
 
 	// TODO: START SERVER
+	app.GRPCServer.MustRun()
+	app.Webhook.MustRun()
 
 	// TODO: Graceful shutdown for server & kafka, db, other shit
 }

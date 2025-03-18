@@ -11,11 +11,17 @@ const (
 	robokassa = "Robokassa"
 )
 
-type PaymentService struct {
-	log *slog.Logger
+type PaymentSaver interface {
+	CreatePayment(ctx context.Context) error
 }
 
-func New() *PaymentService {
+type PaymentService struct {
+	log        *slog.Logger
+	paymentprv PaymentSaver
+}
+
+// New is builder function which return *PaymentService struct (А то оно не видно)
+func New(log *slog.Logger, paymentSaver PaymentSaver) *PaymentService {
 	return &PaymentService{}
 }
 
@@ -32,6 +38,7 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.Payment) 
 	case robokassa:
 		log.Info("attemping to generate url")
 
+		p.paymentprv.CreatePayment(ctx) // delaem
 		// delaem
 
 	default:
