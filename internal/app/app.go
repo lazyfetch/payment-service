@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	grpcapp "payment/internal/app/grpc"
 	webhookapp "payment/internal/app/webhook"
-	paymentsrv "payment/internal/service/grpc/payment"
+	paymentsrv "payment/internal/service/grpc/generate"
 	"payment/internal/storage/postgres"
 )
 
@@ -24,7 +24,7 @@ func New(log *slog.Logger, webHookPort int, grpcPort int) *App {
 	grpcApp := grpcapp.New(paymentService, grpcPort)
 
 	// init webhook component
-	webhookApp := webhookapp.New(webHookPort)
+	webhookApp := webhookapp.New(webHookPort, storage)
 
 	return &App{GRPCServer: grpcApp, Webhook: webhookApp}
 }

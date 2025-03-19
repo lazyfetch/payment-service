@@ -9,19 +9,15 @@ import (
 
 const (
 	robokassa = "Robokassa"
+	yookassa  = "Yookassa"
 )
 
-type PaymentSaver interface {
-	CreatePayment(ctx context.Context) error
-}
-
 type PaymentService struct {
-	log        *slog.Logger
-	paymentprv PaymentSaver
+	log *slog.Logger
 }
 
 // New is builder function which return *PaymentService struct (А то оно не видно)
-func New(log *slog.Logger, paymentSaver PaymentSaver) *PaymentService {
+func New(log *slog.Logger) *PaymentService {
 	return &PaymentService{}
 }
 
@@ -34,17 +30,21 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.Payment) 
 		slog.String("payment_method", req.PaymentMethod),
 	)
 
+	log.Info("attemping to generate url")
+
 	switch req.PaymentMethod {
 	case robokassa:
-		log.Info("attemping to generate url")
 
-		p.paymentprv.CreatePayment(ctx) // delaem
+		// delaem
+
+	case yookassa:
+
 		// delaem
 
 	default:
-		return "", errors.New("invalid payment method")
+		return "", errors.New("invalid payment method") // temp
 	}
 
-	return "", nil // TEMP
+	return "", nil // temp
 
 }

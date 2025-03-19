@@ -3,7 +3,7 @@ package models
 type Payment struct {
 	Name          string
 	Description   string
-	Amount        string
+	Amount        int64
 	PaymentMethod string
 	UserID        string
 }

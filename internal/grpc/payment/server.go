@@ -3,7 +3,7 @@ package paymentgrpc
 import (
 	"context"
 	"payment/internal/domain/models"
-	payment "payment/proto/payment/gen"
+	payment "payment/proto/gen/payment"
 
 	"google.golang.org/grpc"
 )

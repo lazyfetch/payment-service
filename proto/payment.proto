@@ -10,8 +10,8 @@ service Payment {
 message GetPaymentUrlRequest {
     string name = 1;
     string description = 2;
-    string amount = 3;
-    string payment_method = 4; // NOT IMPLEMENTED, NEED GENERATE NEW GO-FILE
+    int64 amount = 3;
+    string payment_method = 4;
     string user_id = 5;
 }
 

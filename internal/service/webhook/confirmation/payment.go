@@ -1,7 +1,12 @@
 package confirmsrv
 
-type PaymentProvider interface {
-	UpdateStatus() error
+import (
+	"context"
+	"payment/internal/domain/models"
+)
+
+type PaymentSaver interface {
+	CreatePayment(ctx context.Context, data models.Payment)
 }
 
-// Тут ебануть нормальные интерфейсы, подумать над названием пакета, репы, потом...
+type ConfirmService struct{}

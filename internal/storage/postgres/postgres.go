@@ -2,31 +2,33 @@ package postgres
 
 import (
 	"context"
+	"payment/internal/domain/models"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Storage struct {
+	Conn *pgxpool.Pool
 }
 
-func MustRun() *Storage {
+func New() *Storage {
 
-	conn, err := pgxpool.New()
+	conn, err := pgxpool.New(context.Background(), "") // temp
 	if err != nil {
-		panic(err) // rework soon
+		panic(err) // temp
 	}
 
-	return &Storage{}
+	return &Storage{Conn: conn}
 }
 
 func (s *Storage) Stop() {
-
+	s.Conn.Close()
 }
 
 func (s *Storage) HealthCheck() {
 
 }
 
-func (s *Storage) CreatePayment(ctx context.Context) {
-
+func (s *Storage) CreatePayment(ctx context.Context, data models.Payment) error {
+	return nil // temp
 }
