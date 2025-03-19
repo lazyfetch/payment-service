@@ -9,10 +9,11 @@ import (
 )
 
 type Config struct {
-	Env      string         `yaml:"env" env-default:"dev"`
-	GRPC     GRPCConfig     `yaml:"grpc"`
-	Postgres PostgresConfig `yaml:"postgres"`
-	Webhook  WebhookConfig  `yaml:"webhook"`
+	Env       string         `yaml:"env" env-default:"dev"`
+	GRPC      GRPCConfig     `yaml:"grpc"`
+	Postgres  PostgresConfig `yaml:"postgres"`
+	Webhook   WebhookConfig  `yaml:"webhook"`
+	RoboKassa Robokassa      `yaml:"robokassa"`
 }
 
 type GRPCConfig struct {
@@ -30,6 +31,11 @@ type PostgresConfig struct {
 
 type WebhookConfig struct {
 	Port int `yaml:"port" env-default:"8080"`
+}
+
+type Robokassa struct {
+	MerchantLogin string `yaml:"merchantlogin"`
+	Password      string `yaml:"password1"`
 }
 
 func MustLoad() *Config {

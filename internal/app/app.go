@@ -5,7 +5,7 @@ import (
 	grpcapp "payment/internal/app/grpc"
 	webhookapp "payment/internal/app/webhook"
 	paymentsrv "payment/internal/service/grpc/generate"
-	"payment/internal/storage/postgres"
+	// "payment/internal/storage/postgres"
 )
 
 type App struct {
@@ -15,7 +15,7 @@ type App struct {
 
 func New(log *slog.Logger, webHookPort int, grpcPort int) *App {
 
-	storage := postgres.New()
+	//	storage := postgres.New()
 
 	// init service layer
 	paymentService := paymentsrv.New(log) // сюда передаем Storage структуру
@@ -24,7 +24,7 @@ func New(log *slog.Logger, webHookPort int, grpcPort int) *App {
 	grpcApp := grpcapp.New(paymentService, grpcPort)
 
 	// init webhook component
-	webhookApp := webhookapp.New(webHookPort, storage)
+	webhookApp := webhookapp.New(webHookPort)
 
 	return &App{GRPCServer: grpcApp, Webhook: webhookApp}
 }

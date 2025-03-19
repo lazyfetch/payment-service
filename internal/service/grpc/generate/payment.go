@@ -37,10 +37,6 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.Payment) 
 
 		// delaem
 
-	case yookassa:
-
-		// delaem
-
 	default:
 		return "", errors.New("invalid payment method") // temp
 	}
