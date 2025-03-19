@@ -5,11 +5,12 @@ import (
 	"errors"
 	"log/slog"
 	"payment/internal/domain/models"
+	rk "payment/internal/lib/robokassa"
 )
 
 const (
-	robokassa = "Robokassa"
 	yookassa  = "Yookassa"
+	robokassa = "Robokassa"
 )
 
 type PaymentService struct {
@@ -21,7 +22,7 @@ func New(log *slog.Logger) *PaymentService {
 	return &PaymentService{}
 }
 
-func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.Payment) (paymentURL string, err error) {
+func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.Payment) (string, error) {
 	const op = "GetPaymentURL"
 
 	log := p.log.With(
@@ -34,13 +35,12 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.Payment) 
 
 	switch req.PaymentMethod {
 	case robokassa:
-
-		// delaem
-
+		paymentURL, err := rk.GeneratePaymentURL(req)
+		if err != nil {
+			return "", err // temp
+		}
+		return paymentURL, nil // temp
 	default:
 		return "", errors.New("invalid payment method") // temp
 	}
-
-	return "", nil // temp
-
 }

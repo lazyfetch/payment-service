@@ -10,6 +10,3 @@ postgres:
   password: "${POSTGRES_PASSWORD}"
 webhook:
   port: 8080
-robokassa:
-  merchantlogin: "${MERCHANT_LOGIN}"
-  password1: "${PASSWORD_1}"

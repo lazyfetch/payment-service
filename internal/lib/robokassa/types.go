@@ -1,5 +1,7 @@
 package robokassa
 
+// Payload may have errors cuz i haven't access to API Robokassa
+// Im not enjoy to register my personal data in their service, sry >:(
 type Payload struct {
 	MerchantLogin  string  `json:"MerchantLogin"`
 	InvoiceType    string  `json:"InvoiceType"`

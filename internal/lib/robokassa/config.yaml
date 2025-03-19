@@ -1,0 +1,2 @@
+merchantlogin: "${MERCHANT_LOGIN}"
+password1: "${PASSWORD_1}"
