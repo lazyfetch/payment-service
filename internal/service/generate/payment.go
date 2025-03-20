@@ -7,6 +7,10 @@ import (
 	"payment/internal/domain/models"
 )
 
+var (
+	ErrInvalidArgument = errors.New("invalid amount")
+)
+
 type GeneratePaymentURL interface {
 	GeneratePaymentURL(models.GRPCPayment) (string, error)
 }
@@ -14,11 +18,6 @@ type GeneratePaymentURL interface {
 type PaymentSaver interface {
 	CreatePayment(ctx context.Context, data models.DBPayment) error
 }
-
-const (
-	yookassa  = "Yookassa"
-	robokassa = "Robokassa"
-)
 
 type PaymentService struct {
 	log        *slog.Logger
@@ -36,7 +35,7 @@ func New(log *slog.Logger, paymentsvr PaymentSaver, paymentgen GeneratePaymentUR
 }
 
 func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayment) (string, error) {
-	const op = "GetPaymentURL"
+	const op = "paymentService.GetPaymentURL"
 
 	log := p.log.With(
 		slog.String("op", op),
@@ -46,17 +45,14 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 
 	log.Info("Attemping to generate url")
 
-	switch req.PaymentMethod {
-	case robokassa:
+	// Чекаем наличие такого юзера, возвращаем ошибку если такого нету
 
-		paymentURL, err := p.paymentgen.GeneratePaymentURL(req)
-		if err != nil {
-			return "", err // temp
-		}
+	// Чекаем его минималку донатную, возвращаем ошибку если ниже минималки
 
-		return paymentURL, nil // temp
-
-	default:
-		return "", errors.New("invalid payment method") // temp
+	paymentURL, err := p.paymentgen.GeneratePaymentURL(req)
+	if err != nil {
+		return "", err // temp
 	}
+
+	return paymentURL, nil
 }

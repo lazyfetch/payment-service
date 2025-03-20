@@ -1,6 +1,7 @@
 package webhookapp
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -54,6 +55,6 @@ func (a *App) Run() error {
 	return a.HTTPServer.ListenAndServe()
 }
 
-func (a *App) Stop() {
-	// temp
+func (a *App) Stop(ctx context.Context) error {
+	return a.HTTPServer.Shutdown(ctx)
 }

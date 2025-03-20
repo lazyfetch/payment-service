@@ -2,11 +2,12 @@ package paymentgrpc
 
 import (
 	"context"
-	"fmt"
 	"payment/internal/domain/models"
 	payment "payment/proto/gen/payment"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type PaymentService interface {
@@ -24,13 +25,18 @@ func Register(gRPC *grpc.Server, paymentService PaymentService) {
 
 func (s *serverAPI) GetPaymentUrl(ctx context.Context, req *payment.GetPaymentUrlRequest) (*payment.GetPaymentUrlResponse, error) {
 
-	fmt.Println("HEI")
+	// validate
+	if err := validateGetPaymentUrl(req); err != nil {
+		return nil, err
+	}
+
+	// generate
 	url, err := s.payment.GetPaymentURL(ctx, models.GRPCPayment{
-		Name:          req.GetName(),
-		Description:   req.GetDescription(),
-		Amount:        req.GetAmount(),
-		PaymentMethod: req.GetPaymentMethod(),
-		UserID:        req.GetUserId(),
+		Name:          req.Name,
+		Description:   req.Description,
+		Amount:        req.Amount,
+		PaymentMethod: req.PaymentMethod,
+		UserID:        req.UserId,
 	})
 
 	if err != nil {
@@ -40,4 +46,31 @@ func (s *serverAPI) GetPaymentUrl(ctx context.Context, req *payment.GetPaymentUr
 	return &payment.GetPaymentUrlResponse{
 		PaymentUrl: url,
 	}, nil
+
+}
+
+func validateGetPaymentUrl(req *payment.GetPaymentUrlRequest) error {
+
+	if len(req.Name) > 40 { // костыль, в конфиг надо temp
+		if req.Name == "" {
+			return status.Error(codes.InvalidArgument, "name is required")
+		}
+		return status.Error(codes.InvalidArgument, "name is too longm max 40 characters allowed")
+	}
+	if len(req.Description) > 250 { // костыль, в конфиг надо temp
+		return status.Error(codes.InvalidArgument, "description is too long, max 250 characters allowed")
+	}
+	if req.Amount <= 0 {
+		if req.Amount >= 100000000 { // желательно через конфиг передавать, temp
+			return status.Error(codes.InvalidArgument, "amount exceeds the limit: 1000000")
+		}
+		return status.Error(codes.InvalidArgument, "amount must be positive")
+	}
+	if req.PaymentMethod != "Robokassa" {
+		return status.Error(codes.InvalidArgument, "no such payment method exists")
+	}
+	if req.UserId == "" {
+		return status.Error(codes.InvalidArgument, "user_id is required")
+	}
+	return nil
 }

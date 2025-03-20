@@ -13,7 +13,7 @@ type Storage struct {
 
 func New() *Storage {
 
-	conn, err := pgxpool.New(context.Background(), "") // temp
+	conn, err := pgxpool.New(context.Background(), "") // протянуть конфиг бд, temp
 	if err != nil {
 		panic(err) // temp
 	}

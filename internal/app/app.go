@@ -5,14 +5,15 @@ import (
 	grpcapp "payment/internal/app/grpc"
 	webhookapp "payment/internal/app/webhook"
 	"payment/internal/lib/robokassa"
-	generatesrv "payment/internal/service/grpc/generate"
-	confirmsrv "payment/internal/service/webhook/confirm"
+	confirmsrv "payment/internal/service/confirm"
+	generatesrv "payment/internal/service/generate"
 	"payment/internal/storage/postgres"
 )
 
 type App struct {
 	GRPCServer *grpcapp.App
 	Webhook    *webhookapp.App
+	Storage    *postgres.Storage
 }
 
 func New(log *slog.Logger, webhookPort int, grpcPort int, login, password string) *App {
@@ -35,5 +36,5 @@ func New(log *slog.Logger, webhookPort int, grpcPort int, login, password string
 	// init webhook
 	webhookApp := webhookapp.New(confirmService, webhookPort)
 
-	return &App{GRPCServer: grpcApp, Webhook: webhookApp}
+	return &App{GRPCServer: grpcApp, Webhook: webhookApp, Storage: storage}
 }
