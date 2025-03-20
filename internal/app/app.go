@@ -30,7 +30,7 @@ func New(log *slog.Logger, webhookPort int, grpcPort int, login, password string
 	confirmService := confirmsrv.New(log, storage)
 
 	// init grpc
-	grpcApp := grpcapp.New(generateService, grpcPort)
+	grpcApp := grpcapp.New(log, generateService, grpcPort)
 
 	// init webhook
 	webhookApp := webhookapp.New(confirmService, webhookPort)

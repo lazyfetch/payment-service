@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -22,6 +23,8 @@ func main() {
 	// TODO: INIT LOGGER
 	log := setupLogger(cfg.Env)
 
+	fmt.Println(cfg.GRPC.Port)
+
 	// TODO: SETUP APP (db, kafka, grpc, webhook)
 	app := application.New(log, cfg.Webhook.Port, cfg.GRPC.Port, cfg.RoboKassa.MerchantLogin, cfg.RoboKassa.Password)
 
@@ -35,10 +38,8 @@ func main() {
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 
 	<-stop
-
 	app.GRPCServer.Stop()
 	app.Webhook.Stop()
-
 	log.Info("Gracefully stopped")
 }
 
