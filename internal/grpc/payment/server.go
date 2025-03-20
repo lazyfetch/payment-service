@@ -9,7 +9,7 @@ import (
 )
 
 type PaymentService interface {
-	GetPaymentURL(ctx context.Context, req models.Payment) (paymentURL string, err error)
+	GetPaymentURL(ctx context.Context, req models.GRPCPayment) (paymentURL string, err error)
 }
 
 type serverAPI struct {
@@ -23,7 +23,7 @@ func Register(gRPC *grpc.Server, paymentService PaymentService) {
 
 func (s *serverAPI) GetPaymentURL(ctx context.Context, req *payment.GetPaymentUrlRequest) (*payment.GetPaymentUrlResponse, error) {
 
-	url, err := s.payment.GetPaymentURL(ctx, models.Payment{
+	url, err := s.payment.GetPaymentURL(ctx, models.GRPCPayment{
 		Name:          req.GetName(),
 		Description:   req.GetDescription(),
 		Amount:        req.GetAmount(),
@@ -32,7 +32,7 @@ func (s *serverAPI) GetPaymentURL(ctx context.Context, req *payment.GetPaymentUr
 	})
 
 	if err != nil {
-		return nil, err // NEED TO MODIFY
+		return nil, err // temp
 	}
 
 	return &payment.GetPaymentUrlResponse{

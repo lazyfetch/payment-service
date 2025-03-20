@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateJWT(password string, data Payload) (string, error) {
+func GenerateJWT(password string, data JWT) (string, error) {
 
 	conc := fmt.Sprintf("%s:%s", data.MerchantLogin, password)
 

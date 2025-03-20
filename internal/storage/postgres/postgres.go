@@ -25,10 +25,11 @@ func (s *Storage) Stop() {
 	s.Conn.Close()
 }
 
-func (s *Storage) HealthCheck() {
-
+func (s *Storage) CreatePayment(ctx context.Context, data models.DBPayment) error {
+	return nil // temp
 }
 
-func (s *Storage) CreatePayment(ctx context.Context, data models.Payment) error {
+func (s *Storage) UpdatePayment(ctx context.Context, data models.DBPayment) error {
+
 	return nil // temp
 }

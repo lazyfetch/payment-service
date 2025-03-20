@@ -4,14 +4,27 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"os"
 	"payment/internal/domain/models"
 )
 
-func GeneratePaymentURL(payment models.Payment) (string, error) {
+type Robokassa struct {
+	login    string
+	password string
+}
 
-	data := Payload{
-		MerchantLogin:  "Some",
-		InvoiceType:    "",
+func New(login string, password string) *Robokassa {
+	return &Robokassa{
+		login:    login,
+		password: password,
+	}
+}
+
+func (r *Robokassa) GeneratePaymentURL(payment models.GRPCPayment) (string, error) {
+
+	data := JWT{
+		MerchantLogin:  os.Getenv("MERCHANT_LOGIN"),
+		InvoiceType:    "OneTime",
 		OutSum:         float64(payment.Amount) / 100,
 		ShpUsername:    payment.Name,
 		ShpUserID:      payment.UserID,
@@ -20,7 +33,7 @@ func GeneratePaymentURL(payment models.Payment) (string, error) {
 
 	baseURL := "https://services.robokassa.ru/InvoiceServiceWebApi/api/CreateInvoice"
 
-	token, err := GenerateJWT("imp_me", data)
+	token, err := GenerateJWT(os.Getenv("MERCHANT_PASSWORD"), data) // temp полный шлак, передавать так variable's, времени ток на такое хватает...
 	if err != nil {
 		return "", err
 	}
@@ -37,11 +50,12 @@ func GeneratePaymentURL(payment models.Payment) (string, error) {
 		return "", err // temp ?
 	}
 
+	defer resp.Body.Close()
 	url, _ := io.ReadAll(resp.Body)
 
 	return string(url), nil
 }
 
-func CheckResultURL() {
+func (r *Robokassa) CheckResultURL() {
 
 }

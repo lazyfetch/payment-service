@@ -1,12 +1,19 @@
-package paymentsrv
+package generatesrv
 
 import (
 	"context"
 	"errors"
 	"log/slog"
 	"payment/internal/domain/models"
-	rk "payment/internal/lib/robokassa"
 )
+
+type GeneratePaymentURL interface {
+	GeneratePaymentURL(models.GRPCPayment) (string, error)
+}
+
+type PaymentSaver interface {
+	CreatePayment(ctx context.Context, data models.DBPayment) error
+}
 
 const (
 	yookassa  = "Yookassa"
@@ -14,15 +21,21 @@ const (
 )
 
 type PaymentService struct {
-	log *slog.Logger
+	log        *slog.Logger
+	paymentsvr PaymentSaver
+	paymentgen GeneratePaymentURL
 }
 
 // New is builder function which return *PaymentService struct (А то оно не видно)
-func New(log *slog.Logger) *PaymentService {
-	return &PaymentService{}
+func New(log *slog.Logger, paymentsvr PaymentSaver, paymentgen GeneratePaymentURL) *PaymentService {
+	return &PaymentService{
+		log:        log,
+		paymentsvr: paymentsvr,
+		paymentgen: paymentgen,
+	}
 }
 
-func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.Payment) (string, error) {
+func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayment) (string, error) {
 	const op = "GetPaymentURL"
 
 	log := p.log.With(
@@ -31,15 +44,18 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.Payment) 
 		slog.String("payment_method", req.PaymentMethod),
 	)
 
-	log.Info("attemping to generate url")
+	log.Info("Attemping to generate url")
 
 	switch req.PaymentMethod {
 	case robokassa:
-		paymentURL, err := rk.GeneratePaymentURL(req)
+
+		paymentURL, err := p.paymentgen.GeneratePaymentURL(req)
 		if err != nil {
 			return "", err // temp
 		}
+
 		return paymentURL, nil // temp
+
 	default:
 		return "", errors.New("invalid payment method") // temp
 	}

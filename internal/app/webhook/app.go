@@ -3,19 +3,33 @@ package webhookapp
 import (
 	"fmt"
 	"net/http"
-	handlers "payment/internal/webhook"
 
 	"github.com/go-chi/chi/v5"
 )
 
-type App struct {
-	HTTPServer *http.Server
+type Validate interface {
+	ValidateWebhook() error
 }
 
-func New(port int) *App {
+func RobokassaHandler() (pattern string, handler http.HandlerFunc) {
+	return "/api/robokassa", func(w http.ResponseWriter, r *http.Request) {
+
+		if r.Method != http.MethodPost {
+			http.Error(w, "Only post!", http.StatusMethodNotAllowed)
+		}
+
+	}
+}
+
+type App struct {
+	HTTPServer *http.Server
+	Validate   Validate
+}
+
+func New(validate Validate, port int) *App {
 
 	router := chi.NewRouter()
-	router.Get(handlers.RobokassaHandler())
+	router.Get(RobokassaHandler())
 
 	serverPort := fmt.Sprintf(":%d", port)
 
@@ -26,6 +40,7 @@ func New(port int) *App {
 
 	return &App{
 		HTTPServer: httpServer,
+		Validate:   validate,
 	}
 }
 
@@ -40,5 +55,5 @@ func (a *App) Run() error {
 }
 
 func (a *App) Stop() {
-
+	// temp
 }
