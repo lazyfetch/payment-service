@@ -5,7 +5,6 @@ import (
 	grpcapp "payment/internal/app/grpc"
 	webhookapp "payment/internal/app/webhook"
 	"payment/internal/config"
-	"payment/internal/lib/robokassa"
 	confirmsrv "payment/internal/service/confirm"
 	generatesrv "payment/internal/service/generate"
 	"payment/internal/storage/postgres"
@@ -22,11 +21,8 @@ func New(log *slog.Logger, config *config.Config) *App {
 	// init db
 	storage := postgres.New(log, config.Postgres)
 
-	// init robokassa
-	robokassa := robokassa.New(config.RoboKassa.MerchantLogin, config.RoboKassa.Password)
-
 	// init gen service
-	generateService := generatesrv.New(log, storage, storage, robokassa) // сюда передаем Storage структуру
+	generateService := generatesrv.New(log, storage, storage, nil) // Удалил нахер robokassa, попробуем yoomoney, иначе мокаем
 
 	// init webhook service
 	confirmService := confirmsrv.New(log, storage)

@@ -4,7 +4,6 @@ go 1.24.1
 
 require (
 	github.com/go-chi/chi/v5 v5.2.1
-	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jackc/pgx/v5 v5.7.2
 	google.golang.org/grpc v1.71.0

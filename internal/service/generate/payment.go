@@ -54,7 +54,7 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 
 	log.Info("attemping to generate url")
 
-	minAmount, err := p.userprv.GetMinAmountByUser(ctx, req.UserID) // просто пробная абстракция temp
+	minAmount, err := p.userprv.GetMinAmountByUser(ctx, req.UserID)
 
 	if err != nil {
 		if errors.Is(err, storage.ErrUserIDNotFound) {
@@ -64,15 +64,21 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 		log.Error("failed to check min_amount", sl.Err(err))
 	}
 
-	if req.Amount < minAmount { // просто пробная абстракция temp
+	if req.Amount < minAmount {
 		log.Warn("min_amount too small")
 		return "", ErrAmountTooSmall
 	}
+
+	// создаем UUID имплементим
+
+	// передаем в GOVNOKASSA mock edition генератор
 
 	paymentURL, err := p.paymentgen.GeneratePaymentURL(req)
 	if err != nil {
 		return "", err // temp
 	}
+
+	// Если нету ошибок, записываем в бд
 
 	return paymentURL, nil
 }
