@@ -3,6 +3,7 @@ package webhookapp
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -19,10 +20,14 @@ func RobokassaHandler() (pattern string, handler http.HandlerFunc) {
 			http.Error(w, "Only post!", http.StatusMethodNotAllowed)
 		}
 
+		// Валидируем через сервисный слой
+
+		// Если ошибки нету возращаем значение OK
 	}
 }
 
 type App struct {
+	log        *slog.Logger
 	HTTPServer *http.Server
 	Validate   Validate
 }

@@ -2,17 +2,21 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"payment/internal/config"
 	"payment/internal/domain/models"
+	"payment/internal/lib/logger/sl"
+	"payment/internal/storage"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Storage struct {
-	Log  *slog.Logger
+	log  *slog.Logger
 	Conn *pgxpool.Pool
 }
 
@@ -37,7 +41,7 @@ func New(log *slog.Logger, config config.PostgresConfig) *Storage {
 
 	log.Info("postgres connection is successful")
 
-	return &Storage{Log: log, Conn: conn}
+	return &Storage{log: log, Conn: conn}
 }
 
 func (s *Storage) Stop() {
@@ -53,7 +57,28 @@ func (s *Storage) UpdatePayment(ctx context.Context, data models.DBPayment) erro
 	return nil // temp
 }
 
-func (s *Storage) User(ctx context.Context, userID string) (models.User, error) {
+func (s *Storage) GetMinAmountByUser(ctx context.Context, userID string) (int64, error) {
+	var minAmount int64
 
-	return models.User{}, nil // temp
+	op := "Storage.User"
+
+	log := s.log.With(
+		slog.String("op", op),
+		slog.String("user_id", userID),
+	)
+
+	log.Info("start check min_amount of user")
+
+	err := s.Conn.QueryRow(ctx, "SELECT min_amount FROM users WHERE user_id=$1", userID).Scan(&minAmount)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Warn("user_id not found")
+			return 0, storage.ErrUserIDNotFound
+		}
+		log.Warn("failed to check user", sl.Err(err))
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("min_amount exists")
+	return minAmount, nil // temp
 }

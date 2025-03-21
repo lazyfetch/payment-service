@@ -5,14 +5,17 @@ import (
 	"errors"
 	"log/slog"
 	"payment/internal/domain/models"
+	"payment/internal/lib/logger/sl"
+	"payment/internal/storage"
 )
 
 var (
-	ErrInvalidArgument = errors.New("invalid amount")
+	ErrInvalidUserID  = errors.New("invalid user_id")
+	ErrAmountTooSmall = errors.New("amount is too small")
 )
 
 type UserProvider interface {
-	User(ctx context.Context, userID string) (models.User, error)
+	GetMinAmountByUser(ctx context.Context, userID string) (int64, error)
 }
 
 type GeneratePaymentURL interface {
@@ -49,14 +52,21 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 		slog.String("payment_method", req.PaymentMethod),
 	)
 
-	log.Info("Attemping to generate url")
+	log.Info("attemping to generate url")
 
-	user, err := p.userprv.User(ctx, req.UserID) // просто пробная абстракция temp
+	minAmount, err := p.userprv.GetMinAmountByUser(ctx, req.UserID) // просто пробная абстракция temp
+
 	if err != nil {
-		return "", err
+		if errors.Is(err, storage.ErrUserIDNotFound) {
+			log.Warn("user_id not found")
+			return "", ErrInvalidUserID
+		}
+		log.Error("failed to check min_amount", sl.Err(err))
 	}
-	if req.Amount < user.MinAmount { // просто пробная абстракция temp
-		return "", err
+
+	if req.Amount < minAmount { // просто пробная абстракция temp
+		log.Warn("min_amount too small")
+		return "", ErrAmountTooSmall
 	}
 
 	paymentURL, err := p.paymentgen.GeneratePaymentURL(req)

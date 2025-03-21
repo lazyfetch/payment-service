@@ -28,5 +28,11 @@ func New(log *slog.Logger, paymentupdr PaymentUpdater) *ConfirmService {
 
 func (c *ConfirmService) ValidateWebhook() error {
 
+	// сначала используем валидатор robokassa
+
+	// потом изменяем статус и Updated_At в DB
+
+	// потом добавляем в очередь кафка новое событие
+
 	return nil // temp
 }
