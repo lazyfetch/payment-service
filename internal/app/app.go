@@ -20,7 +20,7 @@ type App struct {
 func New(log *slog.Logger, config *config.Config) *App {
 
 	// init db
-	storage := postgres.New(config.Postgres)
+	storage := postgres.New(log, config.Postgres)
 
 	// init robokassa
 	robokassa := robokassa.New(config.RoboKassa.MerchantLogin, config.RoboKassa.Password)
