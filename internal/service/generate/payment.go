@@ -11,6 +11,10 @@ var (
 	ErrInvalidArgument = errors.New("invalid amount")
 )
 
+type UserProvider interface {
+	User(ctx context.Context, userID string) (models.User, error)
+}
+
 type GeneratePaymentURL interface {
 	GeneratePaymentURL(models.GRPCPayment) (string, error)
 }
@@ -22,14 +26,16 @@ type PaymentSaver interface {
 type PaymentService struct {
 	log        *slog.Logger
 	paymentsvr PaymentSaver
+	userprv    UserProvider
 	paymentgen GeneratePaymentURL
 }
 
 // New is builder function which return *PaymentService struct (А то оно не видно)
-func New(log *slog.Logger, paymentsvr PaymentSaver, paymentgen GeneratePaymentURL) *PaymentService {
+func New(log *slog.Logger, paymentsvr PaymentSaver, userprv UserProvider, paymentgen GeneratePaymentURL) *PaymentService {
 	return &PaymentService{
 		log:        log,
 		paymentsvr: paymentsvr,
+		userprv:    userprv,
 		paymentgen: paymentgen,
 	}
 }
@@ -45,9 +51,13 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 
 	log.Info("Attemping to generate url")
 
-	// Чекаем наличие такого юзера, возвращаем ошибку если такого нету
-
-	// Чекаем его минималку донатную, возвращаем ошибку если ниже минималки
+	user, err := p.userprv.User(ctx, req.UserID) // просто пробная абстракция temp
+	if err != nil {
+		return "", err
+	}
+	if req.Amount < user.MinAmount { // просто пробная абстракция temp
+		return "", err
+	}
 
 	paymentURL, err := p.paymentgen.GeneratePaymentURL(req)
 	if err != nil {

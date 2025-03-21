@@ -8,6 +8,9 @@ postgres:
   user: "myuser"
   dbname: "mydb"
   password: "${POSTGRES_PASSWORD}"
+  max_conns: 5
+  conn_lifetime:
+  conn_idle:
 webhook:
   port: 8080
 robokassa:

@@ -26,7 +26,7 @@ func main() {
 	log := setupLogger(cfg.Env)
 
 	// TODO: SETUP APP (db, kafka, grpc, webhook)
-	app := application.New(log, cfg.Webhook.Port, cfg.GRPC.Port, cfg.RoboKassa.MerchantLogin, cfg.RoboKassa.Password)
+	app := application.New(log, cfg)
 
 	// TODO: START SERVER
 	go app.GRPCServer.MustRun()

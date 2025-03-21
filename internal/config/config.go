@@ -22,11 +22,14 @@ type GRPCConfig struct {
 }
 
 type PostgresConfig struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	User     string `yaml:"user"`
-	DBname   string `yaml:"dbname"`
-	Password string `yaml:"password" env:"POSTGRES_PASSWORD" env-required:"true"`
+	Host         string        `yaml:"host"`
+	Port         int           `yaml:"port"`
+	User         string        `yaml:"user"`
+	DBname       string        `yaml:"dbname"`
+	Password     string        `yaml:"password" env:"POSTGRES_PASSWORD" env-required:"true"`
+	MaxConns     int           `yaml:"max_conns"`
+	ConnLifetime time.Duration `yaml:"conn_lifetime"`
+	ConnIDLE     time.Duration `yaml:"conn_idle"`
 }
 
 type WebhookConfig struct {
@@ -34,8 +37,8 @@ type WebhookConfig struct {
 }
 
 type Robokassa struct {
-	MerchantLogin string `yaml:"merchantlogin"`
-	Password      string `yaml:"password1"`
+	MerchantLogin string `yaml:"merchantlogin" env:"MERCHANT_LOGIN"`
+	Password      string `yaml:"password1" env:"PASSWORD_1"`
 }
 
 func MustLoad() *Config {
