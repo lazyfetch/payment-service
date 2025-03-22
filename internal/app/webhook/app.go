@@ -3,6 +3,7 @@ package webhookapp
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 
@@ -10,24 +11,30 @@ import (
 )
 
 type Validate interface {
-	ValidateWebhook() error
+	ValidateWebhook(ctx context.Context, rawData []byte) error
 }
 
-func RobokassaHandler() (pattern string, handler http.HandlerFunc) {
+func PaymentHandler(validate Validate) (pattern string, handler http.HandlerFunc) {
 	return "/api/robokassa", func(w http.ResponseWriter, r *http.Request) {
 
 		if r.Method != http.MethodPost {
 			http.Error(w, "Only post!", http.StatusMethodNotAllowed)
 		}
 
-		// Валидируем через сервисный слой
+		rawData, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Failed!", http.StatusInternalServerError)
+		}
+
+		// Валидируем чеез сервисный слой
+		validate.ValidateWebhook(r.Context(), rawData)
 
 		// Если ошибки нету возращаем значение OK
 	}
 }
 
 type App struct {
-	log        *slog.Logger
+	Log        *slog.Logger // not impl in func New()
 	HTTPServer *http.Server
 	Validate   Validate
 }
@@ -35,7 +42,7 @@ type App struct {
 func New(validate Validate, port int) *App {
 
 	router := chi.NewRouter()
-	router.Get(RobokassaHandler())
+	router.Get(PaymentHandler(validate))
 
 	serverPort := fmt.Sprintf(":%d", port)
 

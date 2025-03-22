@@ -69,7 +69,7 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 		log.Warn("min_amount too small")
 		return "", ErrAmountTooSmall
 	}
-
+	// маппуем, создаем idempotency_key
 	uuid := uuid.UUID()
 	payment := models.MapGRPCToDB(&req, uuid)
 
@@ -78,11 +78,13 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 	if err != nil {
 		return "", err // temp
 	}
+
 	// записываем в бд наш созданный платеж
 	if err := p.paymentsvr.CreatePayment(ctx, payment); err != nil {
 		return "", err // temp ошибка в любом случае будет Internal для GRPC, а для логгера, другая.
 	}
 
 	// если ошибок нету, вернется ссылка, и кайфарик будет плотный
+	log.Info("success!", slog.String("idempotency_key", uuid))
 	return paymentURL, nil
 }

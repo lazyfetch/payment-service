@@ -29,7 +29,7 @@ func New(log *slog.Logger, config *config.Config) *App {
 	generateService := generatesrv.New(log, storage, storage, gvkassa) // Удалил нахер robokassa, попробуем yoomoney, иначе мокаем
 
 	// init webhook service
-	confirmService := confirmsrv.New(log, storage)
+	confirmService := confirmsrv.New(log, storage, storage, gvkassa)
 
 	// init grpc
 	grpcApp := grpcapp.New(log, generateService, config.GRPC.Port)

@@ -50,7 +50,7 @@ func (s *Storage) Stop() {
 
 // IsIdempotencyKey returns true of false.
 // True is their find same idempotency key, or false if not.
-func (s *Storage) IsIdempotencyKey(ctx context.Context, data *models.DBPayment) (bool, error) {
+func (s *Storage) IdempotencyAndStatus(ctx context.Context, data *models.DBPayment) (bool, error) {
 	op := "Storage.IsIdempotencyKey"
 
 	log := s.log.With(
@@ -75,15 +75,16 @@ func (s *Storage) CreatePayment(ctx context.Context, data *models.DBPayment) err
 	return nil // temp
 }
 
-func (s *Storage) UpdatePayment(ctx context.Context, data *models.DBPayment) error {
+func (s *Storage) UpdatePayment(ctx context.Context, idemKey string, status string, updatedAt time.Time) error {
 	op := "Storage.CreatePayment"
 
 	log := s.log.With(
 		slog.String("op", op),
-		slog.String("user_id", data.UserID),
+		slog.String("idempotency_key", idemKey),
 	)
 
 	log.Info("start update payment in postgres")
+	err := s.Conn.QueryRow(ctx)
 	return nil // temp
 }
 
