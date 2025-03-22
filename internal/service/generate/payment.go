@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"payment/internal/domain/models"
 	"payment/internal/lib/logger/sl"
+	"payment/internal/lib/uuid"
 	"payment/internal/storage"
 )
 
@@ -19,11 +20,11 @@ type UserProvider interface {
 }
 
 type GeneratePaymentURL interface {
-	GeneratePaymentURL(models.GRPCPayment) (string, error)
+	GeneratePaymentURL(*models.DBPayment) (string, error)
 }
 
 type PaymentSaver interface {
-	CreatePayment(ctx context.Context, data models.DBPayment) error
+	CreatePayment(ctx context.Context, data *models.DBPayment) error
 }
 
 type PaymentService struct {
@@ -69,16 +70,19 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 		return "", ErrAmountTooSmall
 	}
 
-	// создаем UUID имплементим
+	uuid := uuid.UUID()
+	payment := models.MapGRPCToDB(&req, uuid)
 
-	// передаем в GOVNOKASSA mock edition генератор
-
-	paymentURL, err := p.paymentgen.GeneratePaymentURL(req)
+	// передаем в GOVNOKASSA edition генератор
+	paymentURL, err := p.paymentgen.GeneratePaymentURL(payment)
 	if err != nil {
 		return "", err // temp
 	}
+	// записываем в бд наш созданный платеж
+	if err := p.paymentsvr.CreatePayment(ctx, payment); err != nil {
+		return "", err // temp ошибка в любом случае будет Internal для GRPC, а для логгера, другая.
+	}
 
-	// Если нету ошибок, записываем в бд
-
+	// если ошибок нету, вернется ссылка, и кайфарик будет плотный
 	return paymentURL, nil
 }

@@ -11,7 +11,7 @@ type PaymentUpdater interface {
 }
 
 type PaymentProvider interface {
-	Payment() models.GRPCPayment
+	IsIdempotencyKey(ctx context.Context, data models.DBPayment) (bool, error)
 }
 
 type ConfirmService struct {
@@ -28,7 +28,9 @@ func New(log *slog.Logger, paymentupdr PaymentUpdater) *ConfirmService {
 
 func (c *ConfirmService) ValidateWebhook() error {
 
-	// сначала используем валидатор robokassa
+	// валидируем входные данные
+
+	// обращаемся к базе на поиск idempotency_key, если его нету идем дальше
 
 	// потом изменяем статус и Updated_At в DB
 
