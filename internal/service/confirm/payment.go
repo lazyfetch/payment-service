@@ -7,11 +7,11 @@ import (
 )
 
 type PaymentUpdater interface {
-	UpdatePayment(ctx context.Context, data models.DBPayment) error
+	UpdatePayment(ctx context.Context, data *models.DBPayment) error
 }
 
 type PaymentProvider interface {
-	IsIdempotencyKey(ctx context.Context, data models.DBPayment) (bool, error)
+	IsIdempotencyKey(ctx context.Context, data *models.DBPayment) (bool, error)
 }
 
 type ConfirmService struct {

@@ -20,7 +20,7 @@ type UserProvider interface {
 }
 
 type GeneratePaymentURL interface {
-	GeneratePaymentURL(*models.DBPayment) (string, error)
+	GeneratePaymentURL(data *models.DBPayment) (string, error)
 }
 
 type PaymentSaver interface {
