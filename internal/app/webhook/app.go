@@ -15,7 +15,7 @@ type Validate interface {
 }
 
 func PaymentHandler(validate Validate) (pattern string, handler http.HandlerFunc) {
-	return "/api/robokassa", func(w http.ResponseWriter, r *http.Request) {
+	return "/api/internal/govnokassa", func(w http.ResponseWriter, r *http.Request) {
 
 		if r.Method != http.MethodPost {
 			http.Error(w, "Only post!", http.StatusMethodNotAllowed)

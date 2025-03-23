@@ -50,16 +50,27 @@ func (s *Storage) Stop() {
 
 // IsIdempotencyKey returns true of false.
 // True is their find same idempotency key, or false if not.
-func (s *Storage) IdempotencyAndStatus(ctx context.Context, data *models.DBPayment) (bool, error) {
+func (s *Storage) IdempotencyAndStatus(ctx context.Context, idempotencyKey string) bool {
 	op := "Storage.IsIdempotencyKey"
 
 	log := s.log.With(
 		slog.String("op", op),
-		slog.String("user_id", data.UserID),
+		slog.String("idempotency_key", idempotencyKey),
 	)
 
 	log.Info("start update payment in postgres")
-	return false, nil // temp
+	var exists int
+	err := s.Conn.QueryRow(ctx, `
+    SELECT 1
+    FROM payments
+    WHERE idempotency_key = $1 AND status = 'in_progress'
+    LIMIT 1
+	`, idempotencyKey).Scan(&exists)
+	if err != nil {
+		return false // можно доработать temp, но не нужно пока
+	}
+	return true
+
 }
 
 func (s *Storage) CreatePayment(ctx context.Context, data *models.DBPayment) error {
@@ -72,11 +83,25 @@ func (s *Storage) CreatePayment(ctx context.Context, data *models.DBPayment) err
 
 	log.Info("start create payment in postgres")
 
-	return nil // temp
+	cmd, err := s.Conn.Exec(ctx, `
+	INSERT INTO payments (idempotency_key, name, description, amount, user_id, status, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	`, data.IdempotencyKey, data.Name, data.Description, data.Amount, data.UserID, data.Status, data.CreatedAt, data.UpdatedAt)
+
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if num := cmd.RowsAffected(); num != 1 {
+		log.Error("failed to affect on row", slog.String("rows_affected", string(num)))
+		return fmt.Errorf("unexpected number of rows affected: %d", num)
+	}
+
+	return nil
 }
 
 func (s *Storage) UpdatePayment(ctx context.Context, idemKey string, status string, updatedAt time.Time) error {
-	op := "Storage.CreatePayment"
+	op := "Storage.Update"
 
 	log := s.log.With(
 		slog.String("op", op),
@@ -84,8 +109,11 @@ func (s *Storage) UpdatePayment(ctx context.Context, idemKey string, status stri
 	)
 
 	log.Info("start update payment in postgres")
-	err := s.Conn.QueryRow(ctx)
-	return nil // temp
+	err := s.Conn.QueryRow(ctx, "").Scan()
+	if err != nil {
+
+	}
+
 }
 
 func (s *Storage) GetMinAmountByUser(ctx context.Context, userID string) (int64, error) {

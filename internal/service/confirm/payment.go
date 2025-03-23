@@ -13,7 +13,7 @@ type PaymentUpdater interface {
 }
 
 type PaymentProvider interface {
-	IdempotencyAndStatus(ctx context.Context, idemKey string) (bool, error)
+	IdempotencyAndStatus(ctx context.Context, idempotencyKey string) (bool, error)
 }
 
 type Validate interface {
@@ -54,15 +54,9 @@ func (c *ConfirmService) ValidateWebhook(ctx context.Context, rawData []byte) er
 
 	// обращаемся к базе на поиск idempotency_key, если его нету идем дальше
 	check, err := c.paymentprv.IdempotencyAndStatus(ctx, data.IdempotencyKey)
-	if !check {
-		if err != nil {
-			return err // temp
-		}
-		// тут надо сравнить с ошибками возможными, для логера мб, на просто ошибка да и ошибка, и поху
-	}
-	// потом изменяем статус и Updated_At в DB
-	// В транзакцию эти два действия UP AND TOP
-	// потом добавляем в очередь кафка новое событие
+
+	// Оутбокс паттерн создаем, создаем воркер, сначала вносим в 2 таблице,
+	// воркер из одной будет в кафку крутить, сообщения не теряются
 
 	return nil // temp
 }
