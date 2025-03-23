@@ -10,6 +10,7 @@ import (
 	"payment/internal/domain/models"
 	"payment/internal/lib/logger/sl"
 	"payment/internal/storage"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -59,13 +60,16 @@ func (s *Storage) IdempotencyAndStatus(ctx context.Context, idempotencyKey strin
 	)
 
 	log.Info("start update payment in postgres")
+
 	var exists int
+
 	err := s.Conn.QueryRow(ctx, `
     SELECT 1
     FROM payments
     WHERE idempotency_key = $1 AND status = 'in_progress'
     LIMIT 1
 	`, idempotencyKey).Scan(&exists)
+
 	if err != nil {
 		return false // можно доработать temp, но не нужно пока
 	}
@@ -93,14 +97,14 @@ func (s *Storage) CreatePayment(ctx context.Context, data *models.DBPayment) err
 	}
 
 	if num := cmd.RowsAffected(); num != 1 {
-		log.Error("failed to affect on row", slog.String("rows_affected", string(num)))
+		log.Error("failed to affect on row", slog.String("rows_affected", strconv.Itoa(num)))
 		return fmt.Errorf("unexpected number of rows affected: %d", num)
 	}
 
 	return nil
 }
 
-func (s *Storage) UpdatePayment(ctx context.Context, idemKey string, status string, updatedAt time.Time) error {
+func (s *Storage) UpdatePayment(ctx context.Context, idemKey string) error {
 	op := "Storage.Update"
 
 	log := s.log.With(
@@ -109,11 +113,21 @@ func (s *Storage) UpdatePayment(ctx context.Context, idemKey string, status stri
 	)
 
 	log.Info("start update payment in postgres")
-	err := s.Conn.QueryRow(ctx, "").Scan()
+
+	cmd, err := s.Conn.Exec(ctx, `
+    UPDATE payments
+    SET status = 'success',
+        updated_at = $2
+    WHERE idempotency_key = $1
+	`, idemKey, time.Now())
+
 	if err != nil {
-
+		return err
 	}
-
+	if cmd.RowsAffected() != 1 {
+		return fmt.Errorf("update failed, rows affected: %d", cmd.RowsAffected())
+	}
+	return nil
 }
 
 func (s *Storage) GetMinAmountByUser(ctx context.Context, userID string) (int64, error) {
@@ -140,4 +154,8 @@ func (s *Storage) GetMinAmountByUser(ctx context.Context, userID string) (int64,
 
 	log.Info("min_amount exists")
 	return minAmount, nil // temp
+}
+
+func (s *Storage) UpdateAndOutboxPattern() {
+
 }

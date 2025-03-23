@@ -2,18 +2,18 @@ package confirmsrv
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"payment/internal/govnokassa"
 	"payment/internal/lib/logger/sl"
-	"time"
 )
 
 type PaymentUpdater interface {
-	UpdatePayment(ctx context.Context, idemKey string, status string, updatedAt time.Time) error
+	UpdatePayment(ctx context.Context, idemKey string) error
 }
 
 type PaymentProvider interface {
-	IdempotencyAndStatus(ctx context.Context, idempotencyKey string) (bool, error)
+	IdempotencyAndStatus(ctx context.Context, idempotencyKey string) bool
 }
 
 type Validate interface {
@@ -52,8 +52,10 @@ func (c *ConfirmService) ValidateWebhook(ctx context.Context, rawData []byte) er
 
 	log.Info("success validate data!")
 
-	// обращаемся к базе на поиск idempotency_key, если его нету идем дальше
-	check, err := c.paymentprv.IdempotencyAndStatus(ctx, data.IdempotencyKey)
+	check := c.paymentprv.IdempotencyAndStatus(ctx, data.IdempotencyKey)
+	if !check {
+		return fmt.Errorf("") // тут надо логировать лучше, но мне лень
+	}
 
 	// Оутбокс паттерн создаем, создаем воркер, сначала вносим в 2 таблице,
 	// воркер из одной будет в кафку крутить, сообщения не теряются
