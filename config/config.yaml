@@ -5,14 +5,11 @@ grpc:
 postgres:
   host: "localhost"
   port: 5432
-  user: "admin"
-  dbname: "mydatabase"
+  user: "postgres"
+  dbname: "mydb"
   password: "${POSTGRES_PASSWORD}"
   max_conns: 5
   conn_lifetime:
   conn_idle:
 webhook:
   port: 8080
-robokassa:
-  merchantlogin: "${MERCHANT_LOGIN}"
-  password1: "${PASSWORD_1}"

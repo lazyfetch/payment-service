@@ -63,6 +63,7 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 			return "", ErrInvalidUserID
 		}
 		log.Error("failed to check min_amount", sl.Err(err))
+		return "", err
 	}
 
 	if req.Amount < minAmount {

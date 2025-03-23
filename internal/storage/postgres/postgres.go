@@ -10,7 +10,6 @@ import (
 	"payment/internal/domain/models"
 	"payment/internal/lib/logger/sl"
 	"payment/internal/storage"
-	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -97,7 +96,7 @@ func (s *Storage) CreatePayment(ctx context.Context, data *models.DBPayment) err
 	}
 
 	if num := cmd.RowsAffected(); num != 1 {
-		log.Error("failed to affect on row", slog.String("rows_affected", strconv.Itoa(num)))
+		log.Error("failed to affect on row") // temp
 		return fmt.Errorf("unexpected number of rows affected: %d", num)
 	}
 

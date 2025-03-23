@@ -73,7 +73,7 @@ func validateGetPaymentUrl(req *payment.GetPaymentUrlRequest) error {
 		}
 		return status.Error(codes.InvalidArgument, "amount must be positive")
 	}
-	if req.PaymentMethod != "Robokassa" {
+	if req.PaymentMethod != "Govnokassa" {
 		return status.Error(codes.InvalidArgument, "no such payment method exists")
 	}
 	if req.UserId == "" {
