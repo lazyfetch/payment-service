@@ -14,13 +14,14 @@
 - - `func (g *Govnokassa) GeneratePaymentURL(data *models.DBPayment) (string, error)` - for generate payment link
   - `func (g *Govnokassa) ValidateData(rawData []byte) (*GovnoPayment, error)` - for validate incoming webhook from thirdy-payment service
 
-TODO: MIDDLEWARE FOR GRPC + WEBHOOK
-TODO: ЛУЧШЕ ЛОГИ + ОБРАБОТКА ОШИБОК
-TODO: ПРОБЕЖАТЬСЯ ПО // TEMP
-TODO: ТЕСТЫ
-TODO: МИГРАЦИИ
-TODO: README.MD получше
-TODO: DOCKER-COMPOSE OR AUTO-DEPLOY
+## TODO
+- TODO: MIDDLEWARE FOR GRPC + WEBHOOK
+- TODO: ЛУЧШЕ ЛОГИ + ОБРАБОТКА ОШИБОК
+- TODO: ПРОБЕЖАТЬСЯ ПО // TEMP
+- TODO: ТЕСТЫ
+- TODO: МИГРАЦИИ
+- TODO: README.MD получше
+- TODO: DOCKER-COMPOSE OR AUTO-DEPLOY
 
 *really dont know for what i write this, anyway maybe its be useful*
 
