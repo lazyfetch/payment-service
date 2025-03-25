@@ -1,6 +1,6 @@
 package govnokassa
 
 type GovnoPayment struct {
-	IdempotencyKey string
-	UserID         string
+	IdempotencyKey string `json:"idempotency_key"`
+	UserID         string `json:"user_id"`
 }

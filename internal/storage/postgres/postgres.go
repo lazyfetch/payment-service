@@ -12,6 +12,7 @@ import (
 	"payment/internal/storage"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -92,6 +93,7 @@ func (s *Storage) CreatePayment(ctx context.Context, data *models.DBPayment) err
 	`, data.IdempotencyKey, data.Name, data.Description, data.Amount, data.UserID, data.Status, data.CreatedAt, data.UpdatedAt)
 
 	if err != nil {
+		log.Error("unexpected error", sl.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -155,6 +157,62 @@ func (s *Storage) GetMinAmountByUser(ctx context.Context, userID string) (int64,
 	return minAmount, nil // temp
 }
 
-func (s *Storage) UpdateAndOutboxPattern() {
+func (s *Storage) CreateMessage(ctx context.Context, userID string) error {
+	op := "Storage.CreateMessage"
 
+	log := s.log.With(
+		slog.String("op", op),
+	)
+
+	log.Info("start create message for broker")
+
+	cmd, err := s.Conn.Exec(ctx, `INSERT INTO messages (user_id) VALUES
+	($1)`, userID)
+
+	if err != nil {
+		log.Error("unexpected error", sl.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if num := cmd.RowsAffected(); num != 1 {
+		log.Error("failed to affect on row") // temp
+		return fmt.Errorf("unexpected number of rows affected: %d", num)
+	}
+
+	return nil
+
+}
+
+func (s *Storage) OutboxUpdatePayment(ctx context.Context, idemKey, userID string) error {
+	op := "Storage.OutboxUpdatePayment"
+
+	log := s.log.With(
+		slog.String("op", op),
+	)
+
+	log.Info("start outbox transaction")
+
+	tx, err := s.Conn.Begin(ctx)
+	if err != nil {
+		log.Error("failed to start tx", sl.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// defer tx.Rollback
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			log.Error("rollback failed", sl.Err(err))
+		}
+	}()
+
+	// main operation in transaction
+	s.CreateMessage(ctx, userID)
+	s.UpdatePayment(ctx, idemKey)
+
+	// commit
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	return nil
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type PaymentUpdater interface {
-	UpdatePayment(ctx context.Context, idemKey string) error
+	OutboxUpdatePayment(ctx context.Context, idemKey, userID string) error
 }
 
 type PaymentProvider interface {
@@ -57,8 +57,10 @@ func (c *ConfirmService) ValidateWebhook(ctx context.Context, rawData []byte) er
 		return fmt.Errorf("") // тут надо логировать лучше, но мне лень
 	}
 
-	// Оутбокс паттерн создаем, создаем воркер, сначала вносим в 2 таблице,
-	// воркер из одной будет в кафку крутить, сообщения не теряются
+	// Outbox pattern
+	if err = c.paymentupdr.OutboxUpdatePayment(ctx, data.IdempotencyKey, data.UserID); err != nil {
+		return err
+	}
 
 	return nil // temp
 }

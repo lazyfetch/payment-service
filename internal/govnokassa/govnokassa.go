@@ -19,10 +19,13 @@ func (g *Govnokassa) ValidateData(rawData []byte) (*GovnoPayment, error) {
 
 	var p GovnoPayment
 
-	json.Unmarshal(rawData, &p)
+	err := json.Unmarshal(rawData, &p)
+	if err != nil {
+		return nil, err
+	}
 
 	if p.IdempotencyKey == "" || p.UserID == "" {
-		return nil, fmt.Errorf("incorrect webhook")
+		return nil, fmt.Errorf("field's is empty")
 	}
 
 	return &p, nil

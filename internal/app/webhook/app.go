@@ -16,19 +16,24 @@ type Validate interface {
 
 func PaymentHandler(validate Validate) (pattern string, handler http.HandlerFunc) {
 	return "/api/internal/govnokassa", func(w http.ResponseWriter, r *http.Request) {
-
+		fmt.Println(r.Method)
 		if r.Method != http.MethodPost {
 			http.Error(w, "Only post!", http.StatusMethodNotAllowed)
+			return
 		}
-
 		rawData, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Failed!", http.StatusInternalServerError)
+			return
 		}
+		defer r.Body.Close()
 
 		// Валидируем чеез сервисный слой
-		validate.ValidateWebhook(r.Context(), rawData)
-
+		if err = validate.ValidateWebhook(r.Context(), rawData); err != nil {
+			http.Error(w, "Failed!", http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintln(w, "OK!")
 		// Если ошибки нету возращаем значение OK
 	}
 }
@@ -42,7 +47,7 @@ type App struct {
 func New(validate Validate, port int) *App {
 
 	router := chi.NewRouter()
-	router.Get(PaymentHandler(validate))
+	router.Post(PaymentHandler(validate))
 
 	serverPort := fmt.Sprintf(":%d", port)
 
