@@ -3,6 +3,7 @@ package generatesrv
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"payment/internal/domain/models"
 	"payment/internal/lib/logger/sl"
@@ -59,7 +60,7 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 
 	if err != nil {
 		if errors.Is(err, storage.ErrUserIDNotFound) {
-			log.Warn("user_id not found")
+			log.Error("user_id not found")
 			return "", ErrInvalidUserID
 		}
 		log.Error("failed to check min_amount", sl.Err(err))
@@ -67,12 +68,12 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 	}
 
 	if req.Amount < minAmount {
-		log.Warn("min_amount too small")
+		log.Error("min_amount too small")
 		return "", ErrAmountTooSmall
 	}
 	// маппуем, создаем idempotency_key
-	uuid := uuid.UUID()
-	payment := models.MapGRPCToDB(&req, uuid)
+	idempotencyKey := uuid.UUID()
+	payment := models.MapGRPCToDB(&req, idempotencyKey)
 
 	// передаем в GOVNOKASSA edition генератор
 	paymentURL, err := p.paymentgen.GeneratePaymentURL(payment)
@@ -82,10 +83,10 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 
 	// записываем в бд наш созданный платеж
 	if err := p.paymentsvr.CreatePayment(ctx, payment); err != nil {
-		return "", err // temp ошибка в любом случае будет Internal для GRPC, а для логгера, другая.
+		return "", fmt.Errorf("failed to create payment: %w", err) // temp ошибка в любом случае будет Internal для GRPC, а для логгера, другая.
 	}
 
 	// если ошибок нету, вернется ссылка, и кайфарик будет плотный
-	log.Info("success!", slog.String("idempotency_key", uuid))
+	log.Info("success!", slog.String("idempotency_key", idempotencyKey))
 	return paymentURL, nil
 }

@@ -42,7 +42,7 @@ func (c *ConfirmService) ValidateWebhook(ctx context.Context, rawData []byte) er
 	data, err := c.validate.ValidateData(rawData)
 	if err != nil {
 		c.log.Error("failed to validate data", slog.String("op", op), sl.Err(err))
-		return err // temp
+		return fmt.Errorf("failed to validate webhook")
 	}
 
 	log := c.log.With(
@@ -54,13 +54,17 @@ func (c *ConfirmService) ValidateWebhook(ctx context.Context, rawData []byte) er
 
 	check := c.paymentprv.IdempotencyAndStatus(ctx, data.IdempotencyKey)
 	if !check {
-		return fmt.Errorf("") // тут надо логировать лучше, но мне лень
+		log.Error("failed to check idem_key and status")
+		return fmt.Errorf("failed to check idem_key and status")
 	}
 
 	// Outbox pattern
 	if err = c.paymentupdr.OutboxUpdatePayment(ctx, data.IdempotencyKey, data.UserID); err != nil {
-		return err
+		log.Error("failed to update payment", sl.Err(err))
+		return fmt.Errorf("failed to update payment")
 	}
 
-	return nil // temp
+	log.Info("success webhook validation!")
+
+	return nil
 }
