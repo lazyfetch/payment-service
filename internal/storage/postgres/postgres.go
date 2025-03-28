@@ -28,9 +28,9 @@ func BuildDSN(c config.PostgresConfig) string {
 
 func New(log *slog.Logger, config config.PostgresConfig) *Storage {
 
-	conn, err := pgxpool.New(context.Background(), BuildDSN(config)) // протянуть конфиг бд, temp
+	conn, err := pgxpool.New(context.Background(), BuildDSN(config))
 	if err != nil {
-		panic(err) // temp
+		panic(err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -51,7 +51,7 @@ func (s *Storage) Stop() {
 
 // IsIdempotencyKey returns true of false.
 // True is their find same idempotency key, or false if not.
-func (s *Storage) IdempotencyAndStatus(ctx context.Context, idempotencyKey string) bool {
+func (s *Storage) IdempotencyAndStatus(ctx context.Context, idempotencyKey string) error {
 	op := "Storage.IsIdempotencyKey"
 
 	log := s.log.With(
@@ -71,9 +71,14 @@ func (s *Storage) IdempotencyAndStatus(ctx context.Context, idempotencyKey strin
 	`, idempotencyKey).Scan(&exists)
 
 	if err != nil {
-		return false // можно доработать temp, но не нужно пока
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Info("in progress idempotency_key not found")
+			return sql.ErrNoRows
+		}
+		log.Error("unexpected error", sl.Err(err))
+		return err
 	}
-	return true
+	return nil
 
 }
 
@@ -98,7 +103,7 @@ func (s *Storage) CreatePayment(ctx context.Context, data *models.DBPayment) err
 	}
 
 	if num := cmd.RowsAffected(); num != 1 {
-		log.Error("failed to affect on row") // temp
+		log.Error("failed to affect on row")
 		return fmt.Errorf("unexpected number of rows affected: %d", num)
 	}
 
@@ -123,10 +128,12 @@ func (s *Storage) UpdatePayment(ctx context.Context, idemKey string) error {
 	`, idemKey, time.Now())
 
 	if err != nil {
-		return err
+		log.Error("failed to update payment", sl.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
 	}
-	if cmd.RowsAffected() != 1 {
-		return fmt.Errorf("update failed, rows affected: %d", cmd.RowsAffected())
+	if num := cmd.RowsAffected(); num != 1 {
+		log.Error("failed to affect on row")
+		return fmt.Errorf("unexpected number of rows affected: %d", num)
 	}
 	return nil
 }
@@ -146,15 +153,15 @@ func (s *Storage) GetMinAmountByUser(ctx context.Context, userID string) (int64,
 	err := s.Conn.QueryRow(ctx, "SELECT min_amount FROM users WHERE user_id=$1", userID).Scan(&minAmount)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			log.Warn("user_id not found")
+			log.Info("user_id not found")
 			return 0, storage.ErrUserIDNotFound
 		}
-		log.Warn("failed to check user", sl.Err(err))
+		log.Error("failed to check user", sl.Err(err))
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
 	log.Info("min_amount exists")
-	return minAmount, nil // temp
+	return minAmount, nil
 }
 
 func (s *Storage) CreateMessage(ctx context.Context, userID string) error {
@@ -162,6 +169,7 @@ func (s *Storage) CreateMessage(ctx context.Context, userID string) error {
 
 	log := s.log.With(
 		slog.String("op", op),
+		slog.String("user_id", userID),
 	)
 
 	log.Info("start create message for broker")
@@ -175,7 +183,7 @@ func (s *Storage) CreateMessage(ctx context.Context, userID string) error {
 	}
 
 	if num := cmd.RowsAffected(); num != 1 {
-		log.Error("failed to affect on row") // temp
+		log.Error("failed to affect on row")
 		return fmt.Errorf("unexpected number of rows affected: %d", num)
 	}
 
@@ -212,6 +220,7 @@ func (s *Storage) OutboxUpdatePayment(ctx context.Context, idemKey, userID strin
 	// commit
 	err = tx.Commit(ctx)
 	if err != nil {
+		log.Error("failed to commit tx", sl.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 	return nil

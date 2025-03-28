@@ -2,6 +2,8 @@ package confirmsrv
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"payment/internal/govnokassa"
@@ -13,7 +15,7 @@ type PaymentUpdater interface {
 }
 
 type PaymentProvider interface {
-	IdempotencyAndStatus(ctx context.Context, idempotencyKey string) bool
+	IdempotencyAndStatus(ctx context.Context, idempotencyKey string) error
 }
 
 type Validate interface {
@@ -42,7 +44,7 @@ func (c *ConfirmService) ValidateWebhook(ctx context.Context, rawData []byte) er
 	data, err := c.validate.ValidateData(rawData)
 	if err != nil {
 		c.log.Error("failed to validate data", slog.String("op", op), sl.Err(err))
-		return fmt.Errorf("failed to validate webhook")
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	log := c.log.With(
@@ -52,16 +54,19 @@ func (c *ConfirmService) ValidateWebhook(ctx context.Context, rawData []byte) er
 
 	log.Info("success validate data!")
 
-	check := c.paymentprv.IdempotencyAndStatus(ctx, data.IdempotencyKey)
-	if !check {
+	if err = c.paymentprv.IdempotencyAndStatus(ctx, data.IdempotencyKey); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Error("in_progress and idempotency key not found")
+			return fmt.Errorf("in_progress and idempotency key not found")
+		}
 		log.Error("failed to check idem_key and status")
-		return fmt.Errorf("failed to check idem_key and status")
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	// Outbox pattern
 	if err = c.paymentupdr.OutboxUpdatePayment(ctx, data.IdempotencyKey, data.UserID); err != nil {
 		log.Error("failed to update payment", sl.Err(err))
-		return fmt.Errorf("failed to update payment")
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	log.Info("success webhook validation!")

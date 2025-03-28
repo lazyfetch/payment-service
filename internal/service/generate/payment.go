@@ -64,7 +64,7 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 			return "", ErrInvalidUserID
 		}
 		log.Error("failed to check min_amount", sl.Err(err))
-		return "", err
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	if req.Amount < minAmount {
@@ -78,12 +78,14 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 	// передаем в GOVNOKASSA edition генератор
 	paymentURL, err := p.paymentgen.GeneratePaymentURL(payment)
 	if err != nil {
-		return "", err // temp
+		log.Error("failed to create payment url", sl.Err(err))
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	// записываем в бд наш созданный платеж
 	if err := p.paymentsvr.CreatePayment(ctx, payment); err != nil {
-		return "", fmt.Errorf("failed to create payment: %w", err)
+		log.Error("failed to create payment", sl.Err(err))
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	// если ошибок нету, вернется ссылка, и кайфарик будет плотный
