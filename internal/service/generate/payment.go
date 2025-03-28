@@ -83,7 +83,7 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 
 	// записываем в бд наш созданный платеж
 	if err := p.paymentsvr.CreatePayment(ctx, payment); err != nil {
-		return "", fmt.Errorf("failed to create payment: %w", err) // temp ошибка в любом случае будет Internal для GRPC, а для логгера, другая.
+		return "", fmt.Errorf("failed to create payment: %w", err)
 	}
 
 	// если ошибок нету, вернется ссылка, и кайфарик будет плотный
