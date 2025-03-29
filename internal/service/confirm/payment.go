@@ -11,7 +11,7 @@ import (
 )
 
 type PaymentUpdater interface {
-	OutboxUpdatePayment(ctx context.Context, idemKey, userID string) error
+	OutboxUpdatePayment(ctx context.Context, idemKey string, payload any) error
 }
 
 type PaymentProvider interface {
@@ -64,7 +64,7 @@ func (c *ConfirmService) ValidateWebhook(ctx context.Context, rawData []byte) er
 	}
 
 	// Outbox pattern
-	if err = c.paymentupdr.OutboxUpdatePayment(ctx, data.IdempotencyKey, data.UserID); err != nil {
+	if err = c.paymentupdr.OutboxUpdatePayment(ctx, data.IdempotencyKey, data); err != nil {
 		log.Error("failed to update payment", sl.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}

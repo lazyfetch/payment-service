@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -161,20 +162,23 @@ func (s *Storage) GetMinAmountByUser(ctx context.Context, userID string) (int64,
 	return minAmount, nil
 }
 
-func (s *Storage) CreateEvent(ctx context.Context, userID string) error {
+func (s *Storage) CreateEvent(ctx context.Context, payload any) error {
 	const op = "Storage.CreateEvent"
 
 	log := s.log.With(
 		slog.String("op", op),
-		slog.String("user_id", userID),
 	)
 
 	log.Info("start create event")
 
-	// temp здесь надо будет собрать json для payload
+	pl, err := json.Marshal(payload)
+	if err != nil {
+		log.Error("failed to marshal payload", sl.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
-	cmd, err := s.Conn.Exec(ctx, `INSERT INTO events (user_id) VALUES
-	($1)`, userID)
+	cmd, err := s.Conn.Exec(ctx, `INSERT INTO events (event_type, payload, status) VALUES
+	($1, $2, $3)`, "payments.success", pl, "new")
 
 	if err != nil {
 		log.Error("unexpected error", sl.Err(err))
@@ -190,7 +194,7 @@ func (s *Storage) CreateEvent(ctx context.Context, userID string) error {
 
 }
 
-func (s *Storage) OutboxUpdatePayment(ctx context.Context, idemKey, userID string) error {
+func (s *Storage) OutboxUpdatePayment(ctx context.Context, idemKey string, payload any) error {
 	const op = "Storage.OutboxUpdatePayment"
 
 	log := s.log.With(
@@ -213,7 +217,7 @@ func (s *Storage) OutboxUpdatePayment(ctx context.Context, idemKey, userID strin
 	}()
 
 	// main operation in transaction
-	s.CreateEvent(ctx, userID)
+	s.CreateEvent(ctx, payload)
 	s.UpdatePayment(ctx, idemKey)
 
 	// commit
@@ -225,7 +229,7 @@ func (s *Storage) OutboxUpdatePayment(ctx context.Context, idemKey, userID strin
 	return nil
 }
 
-func (s *Storage) GetNewEvent(ctx context.Context) (models.Event, error) {
+/* func (s *Storage) GetNewEvent(ctx context.Context) (models.Event, error) {
 	const op = "Storage.GetNewEvent"
 
 	var event models.Event
@@ -235,4 +239,4 @@ func (s *Storage) GetNewEvent(ctx context.Context) (models.Event, error) {
 		return models.Event{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-}
+} */

@@ -5,8 +5,8 @@ grpc:
 postgres:
   host: "localhost"
   port: 5432
-  user: "postgres"
-  dbname: "mydb"
+  user: "admin"
+  dbname: "mydatabase"
   password: "${POSTGRES_PASSWORD}"
   max_conns: 5
   conn_lifetime:

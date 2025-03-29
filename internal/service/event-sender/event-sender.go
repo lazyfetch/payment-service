@@ -13,7 +13,7 @@ type Sender struct {
 func (s *Sender) StartProcessEvents(ctx context.Context, handlePeriod time.Duration) {
 	const op = "event-sender.StartProcessEvents"
 
-	log := s.log.With(slog.String("op", op))
+	// log := s.log.With(slog.String("op", op))
 
 	ticker := time.NewTicker(handlePeriod)
 

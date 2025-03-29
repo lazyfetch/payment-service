@@ -69,7 +69,6 @@ func (a *App) MustRun() {
 }
 
 func (a *App) Run() error {
-	a.Log.Info("http server started")
 	return a.HTTPServer.ListenAndServe()
 }
 
