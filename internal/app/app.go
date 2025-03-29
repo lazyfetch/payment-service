@@ -35,7 +35,7 @@ func New(log *slog.Logger, config *config.Config) *App {
 	grpcApp := grpcapp.New(log, generateService, config.GRPC.Port)
 
 	// init webhook
-	webhookApp := webhookapp.New(confirmService, config.Webhook.Port)
+	webhookApp := webhookapp.New(log, confirmService, config.Webhook.Port)
 
 	return &App{GRPCServer: grpcApp, Webhook: webhookApp, Storage: storage}
 }

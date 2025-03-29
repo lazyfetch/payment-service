@@ -44,7 +44,7 @@ type App struct {
 	Validate   Validate
 }
 
-func New(validate Validate, port int) *App {
+func New(log *slog.Logger, validate Validate, port int) *App {
 
 	router := chi.NewRouter()
 	router.Post(PaymentHandler(validate))
@@ -57,6 +57,7 @@ func New(validate Validate, port int) *App {
 	}
 
 	return &App{
+		Log:        log,
 		HTTPServer: httpServer,
 		Validate:   validate,
 	}
@@ -69,6 +70,7 @@ func (a *App) MustRun() {
 }
 
 func (a *App) Run() error {
+	a.Log.Info("http server started")
 	return a.HTTPServer.ListenAndServe()
 }
 
