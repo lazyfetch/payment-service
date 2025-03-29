@@ -52,7 +52,7 @@ func (s *Storage) Stop() {
 // IsIdempotencyKey returns true of false.
 // True is their find same idempotency key, or false if not.
 func (s *Storage) IdempotencyAndStatus(ctx context.Context, idempotencyKey string) error {
-	op := "Storage.IsIdempotencyKey"
+	const op = "Storage.IsIdempotencyKey"
 
 	log := s.log.With(
 		slog.String("op", op),
@@ -83,7 +83,7 @@ func (s *Storage) IdempotencyAndStatus(ctx context.Context, idempotencyKey strin
 }
 
 func (s *Storage) CreatePayment(ctx context.Context, data *models.DBPayment) error {
-	op := "Storage.CreatePayment"
+	const op = "Storage.CreatePayment"
 
 	log := s.log.With(
 		slog.String("op", op),
@@ -111,7 +111,7 @@ func (s *Storage) CreatePayment(ctx context.Context, data *models.DBPayment) err
 }
 
 func (s *Storage) UpdatePayment(ctx context.Context, idemKey string) error {
-	op := "Storage.Update"
+	const op = "Storage.Update"
 
 	log := s.log.With(
 		slog.String("op", op),
@@ -139,9 +139,8 @@ func (s *Storage) UpdatePayment(ctx context.Context, idemKey string) error {
 }
 
 func (s *Storage) GetMinAmountByUser(ctx context.Context, userID string) (int64, error) {
+	const op = "Storage.User"
 	var minAmount int64
-
-	op := "Storage.User"
 
 	log := s.log.With(
 		slog.String("op", op),
@@ -164,15 +163,15 @@ func (s *Storage) GetMinAmountByUser(ctx context.Context, userID string) (int64,
 	return minAmount, nil
 }
 
-func (s *Storage) CreateMessage(ctx context.Context, userID string) error {
-	op := "Storage.CreateMessage"
+func (s *Storage) CreateEvent(ctx context.Context, userID string) error {
+	const op = "Storage.CreateEvent"
 
 	log := s.log.With(
 		slog.String("op", op),
 		slog.String("user_id", userID),
 	)
 
-	log.Info("start create message for broker")
+	log.Info("start create event")
 
 	cmd, err := s.Conn.Exec(ctx, `INSERT INTO messages (user_id) VALUES
 	($1)`, userID)
@@ -192,7 +191,7 @@ func (s *Storage) CreateMessage(ctx context.Context, userID string) error {
 }
 
 func (s *Storage) OutboxUpdatePayment(ctx context.Context, idemKey, userID string) error {
-	op := "Storage.OutboxUpdatePayment"
+	const op = "Storage.OutboxUpdatePayment"
 
 	log := s.log.With(
 		slog.String("op", op),
@@ -214,7 +213,7 @@ func (s *Storage) OutboxUpdatePayment(ctx context.Context, idemKey, userID strin
 	}()
 
 	// main operation in transaction
-	s.CreateMessage(ctx, userID)
+	s.CreateEvent(ctx, userID)
 	s.UpdatePayment(ctx, idemKey)
 
 	// commit
@@ -224,4 +223,16 @@ func (s *Storage) OutboxUpdatePayment(ctx context.Context, idemKey, userID strin
 		return fmt.Errorf("%s: %w", op, err)
 	}
 	return nil
+}
+
+func (s *Storage) GetNewEvent(ctx context.Context) (models.Event, error) {
+	const op = "Storage.GetNewEvent"
+
+	var event models.Event
+
+	err := s.Conn.QueryRow(ctx, "").Scan()
+	if err != nil {
+		return models.Event{}, fmt.Errorf("%s: %w", op, err)
+	}
+
 }
