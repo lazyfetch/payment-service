@@ -39,7 +39,7 @@ func New(log *slog.Logger, paymentupdr PaymentUpdater, paymentprv PaymentProvide
 }
 
 func (c *ConfirmService) ValidateWebhook(ctx context.Context, rawData []byte) error {
-	op := "ConfirmService.ValidateWebhook"
+	const op = "ConfirmService.ValidateWebhook"
 
 	data, err := c.validate.ValidateData(rawData)
 	if err != nil {

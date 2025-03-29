@@ -1,4 +1,4 @@
-package event_sender
+package eventsender
 
 import (
 	"context"

@@ -49,39 +49,6 @@ func (s *Storage) Stop() {
 	s.Conn.Close()
 }
 
-// IsIdempotencyKey returns true of false.
-// True is their find same idempotency key, or false if not.
-func (s *Storage) IdempotencyAndStatus(ctx context.Context, idempotencyKey string) error {
-	const op = "Storage.IsIdempotencyKey"
-
-	log := s.log.With(
-		slog.String("op", op),
-		slog.String("idempotency_key", idempotencyKey),
-	)
-
-	log.Info("start update payment in postgres")
-
-	var exists int
-
-	err := s.Conn.QueryRow(ctx, `
-    SELECT 1
-    FROM payments
-    WHERE idempotency_key = $1 AND status = 'in_progress'
-    LIMIT 1
-	`, idempotencyKey).Scan(&exists)
-
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			log.Info("in progress idempotency_key not found")
-			return sql.ErrNoRows
-		}
-		log.Error("unexpected error", sl.Err(err))
-		return err
-	}
-	return nil
-
-}
-
 func (s *Storage) CreatePayment(ctx context.Context, data *models.DBPayment) error {
 	const op = "Storage.CreatePayment"
 
@@ -138,6 +105,37 @@ func (s *Storage) UpdatePayment(ctx context.Context, idemKey string) error {
 	return nil
 }
 
+func (s *Storage) IdempotencyAndStatus(ctx context.Context, idempotencyKey string) error {
+	const op = "Storage.IsIdempotencyKey"
+
+	log := s.log.With(
+		slog.String("op", op),
+		slog.String("idempotency_key", idempotencyKey),
+	)
+
+	log.Info("start update payment in postgres")
+
+	var exists int
+
+	err := s.Conn.QueryRow(ctx, `
+    SELECT 1
+    FROM payments
+    WHERE idempotency_key = $1 AND status = 'in_progress'
+    LIMIT 1
+	`, idempotencyKey).Scan(&exists)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Info("in progress idempotency_key not found")
+			return sql.ErrNoRows
+		}
+		log.Error("unexpected error", sl.Err(err))
+		return err
+	}
+	return nil
+
+}
+
 func (s *Storage) GetMinAmountByUser(ctx context.Context, userID string) (int64, error) {
 	const op = "Storage.User"
 	var minAmount int64
@@ -173,7 +171,9 @@ func (s *Storage) CreateEvent(ctx context.Context, userID string) error {
 
 	log.Info("start create event")
 
-	cmd, err := s.Conn.Exec(ctx, `INSERT INTO messages (user_id) VALUES
+	// temp здесь надо будет собрать json для payload
+
+	cmd, err := s.Conn.Exec(ctx, `INSERT INTO events (user_id) VALUES
 	($1)`, userID)
 
 	if err != nil {
