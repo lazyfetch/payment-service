@@ -35,7 +35,6 @@ type PaymentService struct {
 	paymentgen GeneratePaymentURL
 }
 
-// New is builder function which return *PaymentService struct (А то оно не видно)
 func New(log *slog.Logger, paymentsvr PaymentSaver, userprv UserProvider, paymentgen GeneratePaymentURL) *PaymentService {
 	return &PaymentService{
 		log:        log,
@@ -71,6 +70,7 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 		log.Error("min_amount too small")
 		return "", ErrAmountTooSmall
 	}
+
 	// маппуем, создаем idempotency_key
 	idempotencyKey := uuid.UUID()
 	payment := models.MapGRPCToDB(&req, idempotencyKey)
