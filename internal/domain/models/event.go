@@ -5,6 +5,3 @@ type Event struct {
 	Payload    []byte
 	Status     string
 }
-
-type Payload struct {
-}

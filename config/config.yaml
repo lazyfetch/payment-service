@@ -13,3 +13,9 @@ postgres:
   conn_idle:
 webhook:
   port: 8080
+# not implement!
+internal: 
+  event_sender_TTL: 5s
+  max_amount: 1000000
+  max_message_lenght: 200
+  payment_service: "Govnokassa"
