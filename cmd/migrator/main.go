@@ -13,34 +13,35 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
-type config struct {
-	postgres postgresConfig `yaml:"postgres"`
+type Config struct {
+	PostgresConfig `yaml:"postgres"`
 }
 
-type postgresConfig struct {
-	host     string `yaml:"host" env-default:"localhost"`
-	port     int    `yaml:"port"`
-	user     string `yaml:"user"`
-	dBname   string `yaml:"dbname"`
-	password string `yaml:"password"`
+type PostgresConfig struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	DBname   string `yaml:"dbname"`
+	Password string `yaml:"password" env:"POSTGRES_PASSWORD" env-required:"true"`
 }
 
-func loadConfig(path string) *config {
-	var cfg config
+func loadConfig(path string) *Config {
+	var cfg Config
 	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
 		panic("cannot read config: " + err.Error())
 	}
-	fmt.Printf("postgres host: %s\n", cfg.postgres.host)
-	fmt.Printf("postgres port: %d\n", cfg.postgres.port)
-	fmt.Printf("postgres user: %s\n", cfg.postgres.user)
-	fmt.Printf("postgres dbname: %s\n", cfg.postgres.dBname)
-	fmt.Printf("postgres password: %s\n", cfg.postgres.password)
+	fmt.Printf("postgres host: %s\n", cfg.Host)
+	fmt.Printf("postgres port: %d\n", cfg.Port)
+	fmt.Printf("postgres user: %s\n", cfg.User)
+	fmt.Printf("postgres dbname: %s\n", cfg.DBname)
+	fmt.Printf("postgres password: %s\n", cfg.Password)
 	return &cfg
 }
 
-func newMigrator(cfg *config, migrationsPath string) (*migrate.Migrate, error) {
+func newMigrator(cfg *Config, migrationsPath string) (*migrate.Migrate, error) {
 
-	dbURL := "postgres://admin:admin123@localhost:5432/mydatabase?sslmode=disable"
+	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBname)
 
 	m, err := migrate.New("file://"+migrationsPath, dbURL)
 	if err != nil {
