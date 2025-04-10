@@ -1,7 +1,7 @@
 env: "dev"
 grpc:
   port: 44044
-  timeout: 5s
+  timeout: "5s"
 postgres:
   host: "localhost"
   port: 5432
@@ -15,7 +15,7 @@ webhook:
   port: 8080
 # not implement!
 internal: 
-  event_sender_TTL: 5s
+  event_sender_TTL: "5s"
   max_amount: 1000000
   max_message_lenght: 200
   payment_service: "Govnokassa"

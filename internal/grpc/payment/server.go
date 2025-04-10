@@ -27,12 +27,10 @@ func Register(gRPC *grpc.Server, paymentService PaymentService) {
 
 func (s *serverAPI) GetPaymentUrl(ctx context.Context, req *payment.GetPaymentUrlRequest) (*payment.GetPaymentUrlResponse, error) {
 
-	// validate
 	if err := validateGetPaymentUrl(req); err != nil {
 		return nil, err
 	}
 
-	// generate
 	url, err := s.payment.GetPaymentURL(ctx, models.GRPCPayment{
 		Name:          req.Name,
 		Description:   req.Description,

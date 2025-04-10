@@ -19,24 +19,16 @@ const (
 
 func main() {
 
-	// TODO: INIT CONFIG
 	cfg := config.MustLoad()
-
-	// TODO: INIT LOGGER
 	log := setupLogger(cfg.Env)
-
-	// TODO: SETUP APP (db, kafka, grpc, webhook)
 	app := application.New(log, cfg)
 
-	// TODO: START SERVER
 	go app.GRPCServer.MustRun()
 	go func() {
 		if err := app.Webhook.Run(); err != nil {
 			log.Error("Webhook server error: ", sl.Err(err))
 		}
 	}()
-
-	// TODO: Graceful shutdown for server & kafka, db, other shit
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
