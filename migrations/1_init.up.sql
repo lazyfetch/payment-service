@@ -1,4 +1,4 @@
-CREATE TABLE payments (
+CREATE TABLE IF NOT EXISTS payments (
     idempotency_key TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
@@ -9,7 +9,7 @@ CREATE TABLE payments (
     updated_at TIMESTAMPTZ NOT NULL
 );
 
-CREATE TABLE events (
+CREATE TABLE IF NOT EXISTS events (
     id SERIAL PRIMARY KEY,             
     event_type TEXT NOT NULL,          
     payload JSONB NOT NULL,            
