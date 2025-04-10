@@ -43,7 +43,7 @@ func TestGeneratePaymentUrl_HappyPath(t *testing.T) {
 }
 
 // not working lol
-func TestGeneratePaymentUrl_BadPath(t *testing.T) {
+/* func TestGeneratePaymentUrl_BadPath(t *testing.T) {
 	url := &payment.GetPaymentUrlRequest{
 		Name:          defaultForm.Name,
 		Description:   defaultForm.Description,
@@ -54,6 +54,6 @@ func TestGeneratePaymentUrl_BadPath(t *testing.T) {
 
 	ctx, st := suite.New(t)
 
-	url.Description = 
+	url.Description =
 	// respUrl, err := st.AuthClient.GetPaymentUrl(ctx, url)
-}
+} */
