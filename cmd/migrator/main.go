@@ -30,11 +30,7 @@ func loadConfig(path string) *Config {
 	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
 		panic("cannot read config: " + err.Error())
 	}
-	fmt.Printf("postgres host: %s\n", cfg.Host)
-	fmt.Printf("postgres port: %d\n", cfg.Port)
-	fmt.Printf("postgres user: %s\n", cfg.User)
-	fmt.Printf("postgres dbname: %s\n", cfg.DBname)
-	fmt.Printf("postgres password: %s\n", cfg.Password)
+
 	return &cfg
 }
 
