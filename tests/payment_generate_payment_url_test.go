@@ -42,18 +42,75 @@ func TestGeneratePaymentUrl_HappyPath(t *testing.T) {
 
 }
 
-// not working lol
-/* func TestGeneratePaymentUrl_BadPath(t *testing.T) {
-	url := &payment.GetPaymentUrlRequest{
-		Name:          defaultForm.Name,
-		Description:   defaultForm.Description,
-		Amount:        defaultForm.Amount,
-		PaymentMethod: defaultForm.PaymentMethod,
-		UserId:        defaultForm.UserID,
-	}
-
+func TestGeneratePaymentUrl_BadPath(t *testing.T) {
 	ctx, st := suite.New(t)
 
-	url.Description =
-	// respUrl, err := st.AuthClient.GetPaymentUrl(ctx, url)
-} */
+	tests := []struct {
+		name string
+		form DefaultForm
+	}{
+		{
+			name: "empty name",
+			form: DefaultForm{
+				Name:          "",
+				Description:   defaultForm.Description,
+				Amount:        defaultForm.Amount,
+				PaymentMethod: defaultForm.PaymentMethod,
+				UserID:        defaultForm.UserID,
+			},
+		},
+		{
+			name: "empty description",
+			form: DefaultForm{
+				Name:          defaultForm.Name,
+				Description:   "",
+				Amount:        defaultForm.Amount,
+				PaymentMethod: defaultForm.PaymentMethod,
+				UserID:        defaultForm.UserID,
+			},
+		},
+		{
+			name: "zero amount",
+			form: DefaultForm{
+				Name:          defaultForm.Name,
+				Description:   defaultForm.Description,
+				Amount:        0,
+				PaymentMethod: defaultForm.PaymentMethod,
+				UserID:        defaultForm.UserID,
+			},
+		},
+		{
+			name: "empty payment method",
+			form: DefaultForm{
+				Name:          defaultForm.Name,
+				Description:   defaultForm.Description,
+				Amount:        defaultForm.Amount,
+				PaymentMethod: "",
+				UserID:        defaultForm.UserID,
+			},
+		},
+		{
+			name: "empty user id",
+			form: DefaultForm{
+				Name:          defaultForm.Name,
+				Description:   defaultForm.Description,
+				Amount:        defaultForm.Amount,
+				PaymentMethod: defaultForm.PaymentMethod,
+				UserID:        "",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := st.AuthClient.GetPaymentUrl(ctx, &payment.GetPaymentUrlRequest{
+				Name:          tc.form.Name,
+				Description:   tc.form.Description,
+				Amount:        tc.form.Amount,
+				PaymentMethod: tc.form.PaymentMethod,
+				UserId:        tc.form.UserID,
+			})
+			require.Error(t, err, "expected error but got none")
+		})
+	}
+}
