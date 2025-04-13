@@ -32,7 +32,7 @@ func New(log *slog.Logger, config *config.Config) *App {
 	confirmService := confirmsrv.New(log, storage, storage, gvkassa)
 
 	// init grpc
-	grpcApp := grpcapp.New(log, generateService, config.GRPC.Port)
+	grpcApp := grpcapp.New(log, generateService, config)
 
 	// init webhook
 	webhookApp := webhookapp.New(log, confirmService, config.Webhook.Port)

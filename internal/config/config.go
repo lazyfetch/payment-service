@@ -13,6 +13,7 @@ type Config struct {
 	GRPC     GRPCConfig     `yaml:"grpc"`
 	Postgres PostgresConfig `yaml:"postgres"`
 	Webhook  WebhookConfig  `yaml:"webhook"`
+	Internal Internal       `yaml:"internal"`
 }
 
 type GRPCConfig struct {
@@ -33,6 +34,14 @@ type PostgresConfig struct {
 
 type WebhookConfig struct {
 	Port int `yaml:"port" env-default:"8080"`
+}
+
+type Internal struct {
+	EventSenderTTL   time.Duration `yaml:"event_sender_TTL"`
+	MaxNameLength    int           `yaml:"max_name_length"`
+	MaxAmount        int64         `yaml:"max_amount"`
+	MaxMessageLenght int           `yaml:"max_message_lenght"`
+	PaymentService   string        `yaml:"payment_service"`
 }
 
 func MustLoad() *Config {

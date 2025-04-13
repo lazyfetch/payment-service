@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"payment/internal/app/grpc/interceptors"
+	"payment/internal/config"
 	paymentgrpc "payment/internal/grpc/payment"
 
 	"google.golang.org/grpc"
@@ -15,15 +17,17 @@ type App struct {
 	port       int
 }
 
-func New(log *slog.Logger, paymentService paymentgrpc.PaymentService, port int) *App {
-	gRPCServer := grpc.NewServer()
-
-	paymentgrpc.Register(gRPCServer, paymentService)
+func New(log *slog.Logger, paymentService paymentgrpc.PaymentService, cfg *config.Config) *App {
+	gRPCServer := grpc.NewServer(
+		grpc.UnaryInterceptor(
+			interceptors.ValidationInterceptor(&cfg.Internal),
+		),
+	)
 
 	return &App{
 		log:        log,
 		gRPCServer: gRPCServer,
-		port:       port,
+		port:       cfg.GRPC.Port,
 	}
 }
 

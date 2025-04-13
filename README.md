@@ -18,8 +18,8 @@
 - TODO: MIDDLEWARE FOR GRPC + WEBHOOK
 - TODO: ЛУЧШЕ ЛОГИ + ОБРАБОТКА ОШИБОК
 - TODO: ПРОБЕЖАТЬСЯ ПО // TEMP
-- TODO: ТЕСТЫ
-- TODO: МИГРАЦИИ
+- TODO: ~~ТЕСТЫ~~ 
+- TODO: ~~МИГРАЦИИ~~
 - TODO: README.MD получше
 - TODO: DOCKER-COMPOSE OR AUTO-DEPLOY
 
