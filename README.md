@@ -21,7 +21,7 @@
 - TODO: ~~ТЕСТЫ~~ 
 - TODO: ~~МИГРАЦИИ~~
 - TODO: ~~README.MD получше~~ он идеален
-- TODO: DOCKER-COMPOSE OR AUTO-DEPLOY
+- TODO: DOCKER-COMPOSE OR AUTO-DEPLOY etc.
 
 *really dont know for what i write this, anyway maybe its be useful*
 
