@@ -1,43 +1,81 @@
-# Payment service raw v0.0.2
+# Payment service beta v0.0.1
 
-**Payment service** - A wrapper on Golang for accepting payments on your website that can generate payments and send them to Postgres, and there's a stint on a message broker like Kafka or Redis.
+**Payment service** — A lightweight Golang wrapper for accepting payments on your website.  
+Generates payment links, stores data in Postgres, and pushes events to message brokers like Kafka or Redis.
 
-- Interface of link generation as [GRPC](https://grpc.io/), for webhook processing using is [CHI](https://github.com/go-chi/chi)
+- Link generation is exposed via [gRPC](https://grpc.io/)
+- Webhook processing is handled through [CHI](https://github.com/go-chi/chi)
 
-## Start local development
-- Install go-task (required Go 1.17+)
-- MacOS `brew install go-task` 
-- Ubuntu / Debian`sudo apt install go-task`
-- Arch Linux `sudo pacman -S go-task`
+---
 
-### Go to main directory
-```sh
-$ cd payment-service
-```
-### Run the go-task utility
-- Make sure you download `docker-compose`
-```sh
-$ sudo go-task dev-env
-```
-### For start application
-```sh
-$ go-task dev-app
+## 🔧 Start Local Development
+
+### 1. Install go-task (requires Go 1.17+)
+
+- **macOS:**
+  ```bash
+  brew install go-task/tap/go-task
 ```
 
-## What's service can do:
-- Full abstaction for making worker which will produce message for broker
-- Easy integration with payment service. Just move `internal-govnokassa` to your implementation and given the name of the functions like:
-- - `func (g *Govnokassa) GeneratePaymentURL(data *models.DBPayment) (string, error)` - for generate payment link
-  - `func (g *Govnokassa) ValidateData(rawData []byte) (*GovnoPayment, error)` - for validate incoming webhook from thirdy-payment service
+- **Linux (Ubuntu/Debian/Arch/etc):**
+    ```bash
+    sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d
+    sudo mv ./task /usr/local/bin/
+    ```
+### 2. Go to the root project directory
 
-## TODO
-- TODO: ~~MIDDLEWARE FOR GRPC~~ IP LIMITER/BAN + WEBHOOK middleware
-- TODO: ~~ЛУЧШЕ ЛОГИ + ОБРАБОТКА ОШИБОК~~
-- TODO: ~~ПРОБЕЖАТЬСЯ ПО // TEMP~~
-- TODO: ~~ТЕСТЫ~~ 
-- TODO: ~~МИГРАЦИИ~~
-- TODO: ~~README.MD получше~~ он идеален
-- TODO: ~~DOCKER-COMPOSE OR AUTO-DEPLOY etc.~~ 
-- TODO: CI/CD
-- TODO: Make workerpool, гибкая обработка outbox-pattern'a
-- TODO: ip-limiter for GRPC interceptors
+```bash
+cd payment-service
+```
+
+### 3. Launch local development environment
+
+- Ensure `docker` and `docker-compose` are installed.
+    
+
+```bash
+go-task dev-env
+```
+
+### 4. Start the application
+
+```bash
+go-task dev-app
+```
+
+---
+
+## 🚀 What This Service Can Do
+
+- Full abstraction for spinning up workers that publish messages to a broker.
+    
+- Easy payment gateway integration: just copy `internal-govnokassa` and implement functions like:
+    
+    - `GeneratePaymentURL(data *models.DBPayment) (string, error)` — Generate payment link.
+        
+    - `ValidateData(rawData []byte) (*GovnoPayment, error)` — Validate webhooks from 3rd-party payment systems.
+        
+
+---
+
+## 📋 TODO
+
+-  MIDDLEWARE FOR GRPC ✅
+    
+-  IP LIMITER / BAN + Webhook middleware
+    
+-  Better logs + error handling
+    
+-  Cleanup `// TEMP` code
+    
+-  Database migrations
+    
+-  Improve this README (it's perfect now 😎)
+    
+-  docker-compose + deploy setup
+    
+-  CI/CD pipeline
+    
+-  Workerpool for outbox-pattern
+    
+-  gRPC interceptor IP limiter
