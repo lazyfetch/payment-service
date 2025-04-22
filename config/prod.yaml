@@ -1,0 +1,22 @@
+env: "prod"
+grpc:
+  port: 44044
+  timeout: "5s"
+postgres:
+  host: "localhost"
+  port: 5432
+  user: "admin"
+  dbname: "mydatabase"
+  password: "${POSTGRES_PASSWORD}"
+  max_conns: 5
+  conn_lifetime:
+  conn_idle:
+webhook:
+  port: 8080
+# not implement!
+internal: 
+  event_sender_TTL: "5s"
+  max_name_length: 40
+  max_amount: 1000000
+  max_message_lenght: 200
+  payment_service: "Govnokassa"

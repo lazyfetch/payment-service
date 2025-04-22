@@ -1,12 +1,32 @@
 version: "3"
 
 tasks:
-  dev:
+  
+  dev-env:
     desc: "Up developer environment, docker-compose, migrations"
     cmds:
-      - ./scripts/dev-up.sh
-  migrations:
-    desc: "Make migrations"
+      - ./scripts/dev/dev-up.sh    
+  
+  migrator:
+    desc: "Migrator"
+    env:
+      CONFIG_PATH: "./config/dev.yaml"
+      MIGRATIONS_PATH: "./migrations"
     cmds:
       - ./scripts/migrator.sh
   
+  run:
+    desc: "Run with config file"
+    env:
+      CONFIG_PATH: '{{.CONFIG_PATH | default "./config/dev.yaml"}}'
+      POSTGRES_PASSWORD: '{{.POSTGRES_PASSWORD | default admin123}}'
+    cmds:
+      - go run ./cmd/payment/main.go
+  dev-app:
+    desc: "Run application with dev config"
+    env:
+      CONFIG_PATH: "./config/dev.yaml"
+      POSTGRES_PASSWORD: "devpass"
+    cmds:
+      - go run ./cmd/payment/main.go 
+    

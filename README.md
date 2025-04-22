@@ -4,12 +4,25 @@
 
 - Interface of link generation as [GRPC](https://grpc.io/), for webhook processing using is [CHI](https://github.com/go-chi/chi)
 
-## Развертывание среды разработки
-- 
+## Start local development
+- Install go-task (required Go 1.17+)
+- MacOS `brew install go-task` 
+- Ubuntu / Debian`sudo apt install go-task`
+- Arch Linux `sudo pacman -S go-task`
 
-## ENV VARIABLE'S LIST:
-1. `POSTGRES-PASSWORD` - NEED FOR POSTGRES-PASSWORD
-2. `CONFIG_PATH` or `--CONFIG-PATH` - Config path 
+### Go to main directory
+```sh
+$ cd payment-service
+```
+### Run the go-task utility
+- Make sure you download `docker-compose`
+```sh
+$ sudo go-task dev-env
+```
+### For start application
+```sh
+$ go-task dev-app
+```
 
 ## What's service can do:
 - Full abstaction for making worker which will produce message for broker
@@ -24,11 +37,7 @@
 - TODO: ~~ТЕСТЫ~~ 
 - TODO: ~~МИГРАЦИИ~~
 - TODO: ~~README.MD получше~~ он идеален
-- TODO: DOCKER-COMPOSE OR AUTO-DEPLOY etc.
-- TODO: скриптинг
-- TODO: Сделать workerpool, или просто одного воркера создать, для обработки событий для кафки (реализацию кафки можно просто мокать)
-
-
-
-*really dont know for what i write this, anyway maybe its be useful*
-
+- TODO: ~~DOCKER-COMPOSE OR AUTO-DEPLOY etc.~~ 
+- TODO: CI/CD
+- TODO: Make workerpool, гибкая обработка outbox-pattern'a
+- TODO: ip-limiter for GRPC interceptors
