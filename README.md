@@ -4,6 +4,9 @@
 
 - Interface of link generation as [GRPC](https://grpc.io/), for webhook processing using is [CHI](https://github.com/go-chi/chi)
 
+## Развертывание среды разработки
+- 
+
 ## ENV VARIABLE'S LIST:
 1. `POSTGRES-PASSWORD` - NEED FOR POSTGRES-PASSWORD
 2. `CONFIG_PATH` or `--CONFIG-PATH` - Config path 
@@ -22,6 +25,10 @@
 - TODO: ~~МИГРАЦИИ~~
 - TODO: ~~README.MD получше~~ он идеален
 - TODO: DOCKER-COMPOSE OR AUTO-DEPLOY etc.
+- TODO: скриптинг
+- TODO: Сделать workerpool, или просто одного воркера создать, для обработки событий для кафки (реализацию кафки можно просто мокать)
+
+
 
 *really dont know for what i write this, anyway maybe its be useful*
 

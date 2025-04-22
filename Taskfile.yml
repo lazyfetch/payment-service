@@ -1,0 +1,12 @@
+version: "3"
+
+tasks:
+  dev:
+    desc: "Up developer environment, docker-compose, migrations"
+    cmds:
+      - ./scripts/dev-up.sh
+  migrations:
+    desc: "Make migrations"
+    cmds:
+      - ./scripts/migrator.sh
+  

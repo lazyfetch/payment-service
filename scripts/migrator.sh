@@ -1,0 +1,1 @@
+go run ./cmd/migrator/main.go --config-path="./config/dev.yaml" --migrations-path="./migrations"
