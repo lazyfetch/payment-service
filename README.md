@@ -14,7 +14,7 @@ Generates payment links, stores data in Postgres, and pushes events to message b
 
 - **macOS:**
 ```bash
-  brew install go-task/tap/go-task
+  brew install go-task
 ```
 
 - **Linux (Ubuntu/Debian/Arch/etc):**
