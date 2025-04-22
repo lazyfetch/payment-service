@@ -13,15 +13,15 @@ Generates payment links, stores data in Postgres, and pushes events to message b
 ### 1. Install go-task (requires Go 1.17+)
 
 - **macOS:**
-  ```bash
+```bash
   brew install go-task/tap/go-task
 ```
 
 - **Linux (Ubuntu/Debian/Arch/etc):**
-    ```bash
+```bash
     sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d
     sudo mv ./task /usr/local/bin/
-    ```
+```
 ### 2. Go to the root project directory
 
 ```bash
