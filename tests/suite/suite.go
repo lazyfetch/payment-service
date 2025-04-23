@@ -26,7 +26,8 @@ func New(t *testing.T) (context.Context, *Suite) {
 	t.Helper()
 	t.Parallel()
 
-	cfg := config.MustLoadPath("../config/config.yaml")
+	cfg := config.MustLoadPath("../config/dev.yaml") // shit, cuz hardcode
+	// for production need real good features
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.GRPC.Timeout)
 
