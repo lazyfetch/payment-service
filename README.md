@@ -64,18 +64,18 @@ go-task dev-app
     
 -  IP LIMITER / BAN + Webhook middleware
     
--  Better logs + error handling
+-  Better logs + error handling ✅
     
--  Cleanup `// TEMP` code
+-  Cleanup `// TEMP` code ✅
     
--  Database migrations
+-  Database migrations ✅
     
--  Improve this README (it's perfect now 😎)
+-  Improve this README (it's perfect now 😎) 
     
--  docker-compose + deploy setup
+-  docker-compose + deploy setup ✅
     
 -  CI/CD pipeline
     
--  Workerpool for outbox-pattern
+-  Workerpool for outbox-pattern 
     
--  gRPC interceptor IP limiter
+-  gRPC interceptor IP limiter 

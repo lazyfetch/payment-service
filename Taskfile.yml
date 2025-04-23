@@ -7,6 +7,14 @@ tasks:
     cmds:
       - ./scripts/dev/dev-up.sh    
   
+  dev-app:
+    desc: "Run application with dev config"
+    env:
+      CONFIG_PATH: "./config/dev.yaml"
+      POSTGRES_PASSWORD: "devpass"
+    cmds:
+      - go run ./cmd/payment/main.go
+
   migrator:
     desc: "Migrator"
     env:
@@ -22,11 +30,4 @@ tasks:
       POSTGRES_PASSWORD: '{{.POSTGRES_PASSWORD | default admin123}}'
     cmds:
       - go run ./cmd/payment/main.go
-  dev-app:
-    desc: "Run application with dev config"
-    env:
-      CONFIG_PATH: "./config/dev.yaml"
-      POSTGRES_PASSWORD: "devpass"
-    cmds:
-      - go run ./cmd/payment/main.go 
     

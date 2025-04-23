@@ -14,7 +14,7 @@ until docker exec $(docker-compose -f "$COMPOSE_FILE" ps -q postgres) pg_isready
 done
 
 echo "Make migration"
-./scripts/dev/migrator.sh
+./scripts/migrator.sh
 
 echo "Success!"
 
