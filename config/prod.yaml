@@ -1,6 +1,6 @@
 env: "prod"
 grpc:
-  port: 44044
+  port: 
   timeout: "5s"
 postgres:
   host: ""
@@ -8,11 +8,14 @@ postgres:
   user: ""
   dbname: ""
   password: "${POSTGRES_PASSWORD}"
-  max_conns: 5
+  max_conns: 
   conn_lifetime:
   conn_idle:
+redis:
+  host: ""
+  port: 
 webhook:
-  port: 8080
+  port: 
 internal: 
   event_sender_TTL: "5s"
   max_name_length: 40

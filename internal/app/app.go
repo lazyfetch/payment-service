@@ -9,11 +9,13 @@ import (
 	confirmsrv "payment/internal/service/confirm"
 	generatesrv "payment/internal/service/generate"
 	"payment/internal/storage/postgres"
+	Redis "payment/internal/storage/redis"
 )
 
 type App struct {
 	GRPCServer *grpcapp.App
 	Webhook    *webhookapp.App
+	Redis      *Redis.Redis
 	Storage    *postgres.Storage
 }
 
@@ -24,6 +26,9 @@ func New(log *slog.Logger, config *config.Config) *App {
 
 	// init db
 	storage := postgres.New(log, config.Postgres)
+
+	// init redis
+	redis := Redis.New(log, config.Redis)
 
 	// init gen service
 	generateService := generatesrv.New(log, storage, storage, gvkassa)
@@ -37,5 +42,5 @@ func New(log *slog.Logger, config *config.Config) *App {
 	// init webhook
 	webhookApp := webhookapp.New(log, confirmService, config.Webhook.Port)
 
-	return &App{GRPCServer: grpcApp, Webhook: webhookApp, Storage: storage}
+	return &App{GRPCServer: grpcApp, Webhook: webhookApp, Redis: redis, Storage: storage}
 }

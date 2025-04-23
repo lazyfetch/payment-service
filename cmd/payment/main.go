@@ -23,7 +23,10 @@ func main() {
 	log := setupLogger(cfg.Env)
 	app := application.New(log, cfg)
 
+	// start
+
 	go app.GRPCServer.MustRun()
+
 	go func() {
 		if err := app.Webhook.Run(); err != nil {
 			log.Error("Webhook server error: ", sl.Err(err))
@@ -39,11 +42,16 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// stop
+
 	app.GRPCServer.Stop()
+
 	if err := app.Webhook.Stop(ctx); err != nil {
 		log.Error("Shutdown error")
 	}
 	app.Storage.Stop()
+
+	app.Redis.Close()
 
 	log.Info("Server gracefully stopped")
 }

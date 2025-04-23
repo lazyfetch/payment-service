@@ -11,6 +11,9 @@ postgres:
   max_conns: 5
   conn_lifetime:
   conn_idle:
+redis:
+  host: "localhost"
+  port: 6379
 webhook:
   port: 8080
 internal: 

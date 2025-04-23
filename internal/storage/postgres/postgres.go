@@ -34,7 +34,7 @@ func New(log *slog.Logger, config config.PostgresConfig) *Storage {
 		panic(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // temp, loks like hardcode
 	defer cancel()
 
 	if err := conn.Ping(ctx); err != nil {
@@ -48,6 +48,7 @@ func New(log *slog.Logger, config config.PostgresConfig) *Storage {
 
 func (s *Storage) Stop() {
 	s.Conn.Close()
+	s.log.Info("postgres close connection")
 }
 
 func (s *Storage) CreatePayment(ctx context.Context, data *models.DBPayment) error {

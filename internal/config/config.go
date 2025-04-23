@@ -12,6 +12,7 @@ type Config struct {
 	Env      string         `yaml:"env" env-default:"dev"`
 	GRPC     GRPCConfig     `yaml:"grpc"`
 	Postgres PostgresConfig `yaml:"postgres"`
+	Redis    RedisConfig    `yaml:"redis"`
 	Webhook  WebhookConfig  `yaml:"webhook"`
 	Internal Internal       `yaml:"internal"`
 }
@@ -19,6 +20,11 @@ type Config struct {
 type GRPCConfig struct {
 	Port    int           `yaml:"port" env-default:"44044"`
 	Timeout time.Duration `yaml:"timeout"`
+}
+
+type RedisConfig struct {
+	Host string `yaml:"host"`
+	Port int    `yaml:"port"`
 }
 
 type PostgresConfig struct {
