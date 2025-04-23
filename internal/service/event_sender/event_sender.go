@@ -10,7 +10,7 @@ type Event interface {
 }
 
 type Sender struct {
-	log *slog.Logger
+	Log *slog.Logger
 }
 
 // Реализация одного воркера, можно оборачивать в workerpool,
@@ -25,7 +25,7 @@ func StartWorkerPool(ctx context.Context) {
 func (s *Sender) StartProcessEvents(ctx context.Context, handlePeriod time.Duration) {
 	const op = "eventsender.StartProcessEvents"
 
-	log := s.log.With(slog.String("op", op))
+	log := s.Log.With(slog.String("op", op))
 
 	log.Info("start event sending")
 
@@ -39,6 +39,7 @@ func (s *Sender) StartProcessEvents(ctx context.Context, handlePeriod time.Durat
 				return
 			case <-ticker.C:
 				// Здесь мы пишем логику обработки
+				log.Info("check events")
 			}
 		}
 	}()

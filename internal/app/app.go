@@ -1,15 +1,18 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 	grpcapp "payment/internal/app/grpc"
 	webhookapp "payment/internal/app/webhook"
 	"payment/internal/config"
 	"payment/internal/govnokassa"
 	confirmsrv "payment/internal/service/confirm"
+	eventsender "payment/internal/service/event_sender"
 	generatesrv "payment/internal/service/generate"
 	"payment/internal/storage/postgres"
 	Redis "payment/internal/storage/redis"
+	"time"
 )
 
 type App struct {
@@ -20,6 +23,12 @@ type App struct {
 }
 
 func New(log *slog.Logger, config *config.Config) *App {
+
+	// VERY temp
+
+	t := time.Second * 5
+	sender := eventsender.Sender{Log: log}
+	sender.StartProcessEvents(context.Background(), t)
 
 	// payment service
 	gvkassa := &govnokassa.Govnokassa{}
