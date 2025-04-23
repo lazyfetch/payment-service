@@ -13,7 +13,6 @@ postgres:
   conn_idle:
 webhook:
   port: 8080
-# not implement!
 internal: 
   event_sender_TTL: "5s"
   max_name_length: 40

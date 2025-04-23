@@ -26,7 +26,7 @@ func New(log *slog.Logger, config *config.Config) *App {
 	storage := postgres.New(log, config.Postgres)
 
 	// init gen service
-	generateService := generatesrv.New(log, storage, storage, gvkassa) // Удалил нахер robokassa, попробуем yoomoney, иначе мокаем
+	generateService := generatesrv.New(log, storage, storage, gvkassa)
 
 	// init webhook service
 	confirmService := confirmsrv.New(log, storage, storage, gvkassa)

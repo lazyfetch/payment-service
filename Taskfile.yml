@@ -15,10 +15,18 @@ tasks:
     cmds:
       - go run ./cmd/payment/main.go
 
-  migrator:
-    desc: "Migrator"
+  dev-migrator:
+    desc: "Make test migration, for local dev"
     env:
       CONFIG_PATH: "./config/dev.yaml"
+      MIGRATIONS_PATH: "./tests/migrations"
+    cmds:
+      - ./scripts/migrator.sh
+
+  migrator:
+    desc: "Migrator for production"
+    env:
+      CONFIG_PATH: "./config/prod.yaml"
       MIGRATIONS_PATH: "./migrations"
     cmds:
       - ./scripts/migrator.sh

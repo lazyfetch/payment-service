@@ -1,3 +1,5 @@
+// GOLANG-MIGRATOR VERY BAD ASS, NEED CHANGE OR SOMETHING
+
 package main
 
 import (

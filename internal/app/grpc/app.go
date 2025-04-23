@@ -24,6 +24,8 @@ func New(log *slog.Logger, paymentService paymentgrpc.PaymentService, cfg *confi
 		),
 	)
 
+	paymentgrpc.Register(gRPCServer, paymentService)
+
 	return &App{
 		log:        log,
 		gRPCServer: gRPCServer,
