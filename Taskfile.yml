@@ -4,6 +4,9 @@ tasks:
   
   dev-env:
     desc: "Up developer environment, docker-compose, migrations"
+    env:
+      CONFIG_PATH: "./config/dev.yaml"
+      MIGRATIONS_PATH: "./migrations"
     cmds:
       - ./scripts/dev/dev-up.sh    
   

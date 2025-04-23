@@ -16,9 +16,16 @@ redis:
   port: 6379
 webhook:
   port: 8080
-internal: 
+internal:
   event_sender_TTL: "5s"
   max_name_length: 40
   max_amount: 1000000
   max_message_lenght: 200
   payment_service: "Govnokassa"
+# NOT IMPLEMENT
+rate_limiter:
+  enabled: true
+  redis_addr: "localhost:6379"
+  window_seconds: 60
+  max_requests: 10
+  ban_durations: [300, 600, 900, 1800, 3600] # seconds: 5m, 10m, 15m, 30m, 1h
