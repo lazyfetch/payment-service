@@ -51,3 +51,12 @@ func (r *Redis) Close() {
 	r.log.Info("redis close connection")
 
 }
+
+func (r *Redis) AllowRequest() (bool, error) {
+
+	return true, nil // temp
+}
+
+func SendEvent() error {
+	return nil // temp
+}
