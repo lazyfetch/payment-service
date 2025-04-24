@@ -2,8 +2,8 @@
 
 set -e
 
-ENV_PATH="./docker/dev/.env"
-COMPOSE_FILE="./docker/dev/docker-compose.yml"
+ENV_PATH="./.env"
+COMPOSE_FILE="./docker-compose.yml"
 
 echo "Docker-compose up"
 docker-compose --env-file "$ENV_PATH" -f "$COMPOSE_FILE" up -d postgres redis
