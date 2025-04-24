@@ -198,8 +198,8 @@ func (s *Storage) CreateEvent(ctx context.Context, payload any) error {
 
 }
 
-func (s *Storage) OutboxUpdatePayment(ctx context.Context, idemKey string, payload any) error {
-	const op = "Storage.OutboxUpdatePayment"
+func (s *Storage) OutboxUpdatePaymentTx(ctx context.Context, idemKey string, payload any) error {
+	const op = "Storage.OutboxUpdatePaymentTx"
 
 	log := s.log.With(
 		slog.String("op", op),
@@ -233,14 +233,54 @@ func (s *Storage) OutboxUpdatePayment(ctx context.Context, idemKey string, paylo
 	return nil
 }
 
-/* func (s *Storage) GetNewEvent(ctx context.Context) (models.Event, error) {
+// Это временная шляпа, нужно использовать транзакцию что снизу
+func (s *Storage) GetNewEvent(ctx context.Context) (models.Event, error) {
 	const op = "Storage.GetNewEvent"
+
+	// Здесь мы должны получить payload + id, где status new или in_progress + ttl < now - 3 minut (или какой там ТТЛ)
 
 	var event models.Event
 
-	err := s.Conn.QueryRow(ctx, "").Scan()
+	err := s.Conn.QueryRow(ctx, `SELECT payload from events WHERE status = 'new'`).Scan()
 	if err != nil {
 		return models.Event{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-} */
+	return event, nil
+}
+
+func (s *Storage) UpdateEventTTL(ctx context.Context, id int) error {
+	// Здесь мы обновляем статус с new -> in_progress + TTL время которое = now + 3, условно говоря
+	return nil // temp
+}
+
+func (s *Storage) UpdateEventStatus(ctx context.Context, id int) error {
+	// Здесь в рамках транзакции мы ставим complete, ok, done или любой другой статус
+	return nil // temp
+}
+
+func (s *Storage) EventTx(ctx context.Context) error {
+
+	/*
+		BEGIN;
+
+		-- 1. Выбрать и залочить одну задачу с нужным статусом или просроченной in_progress
+		SELECT id, payload
+		FROM events
+		WHERE
+		  (status = 'new' OR (status = 'in_progress' AND updated_at < NOW() - INTERVAL '3 minutes'))
+		ORDER BY updated_at ASC
+		LIMIT 1
+		FOR UPDATE SKIP LOCKED;
+
+		-- 2. Обновить статус на in_progress и обновить updated_at
+		UPDATE events
+		SET status = 'in_progress', updated_at = NOW()
+		WHERE id = <ID_из_предыдущего_запроса>;
+
+		COMMIT;
+	*/
+
+	return nil
+
+}

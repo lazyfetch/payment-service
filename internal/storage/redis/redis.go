@@ -2,6 +2,7 @@ package Redis
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"payment/internal/config"
@@ -14,7 +15,7 @@ import (
 
 type Redis struct {
 	log    *slog.Logger
-	Client *redis.Client
+	client *redis.Client
 }
 
 func New(log *slog.Logger, cfg config.RedisConfig) *Redis {
@@ -38,14 +39,14 @@ func New(log *slog.Logger, cfg config.RedisConfig) *Redis {
 
 	return &Redis{
 		log:    log,
-		Client: redisClient,
+		client: redisClient,
 	}
 }
 
 func (r *Redis) Close() {
 	// const op = "redis.Close"
 
-	if err := r.Client.Close(); err != nil {
+	if err := r.client.Close(); err != nil {
 		r.log.Error("redis closing connection err:", sl.Err(err))
 	}
 
@@ -56,10 +57,65 @@ func (r *Redis) Close() {
 // TODO реализовать два метода этих, и жить спокойно <3 <3
 
 func (r *Redis) Allow(ctx context.Context, ip string) (bool, error) {
+	// здесь ужасные аллокации, будут срать нам GC
+	// обязательно выносим все эти билдеры в отдельную функцию,
+	// и туда протягиваем конфиг, или шаманим как угодно temp
+	banKey := fmt.Sprintf("ban:%s", ip)
+	countKey := fmt.Sprintf("requests:%s", ip)
+	levelKey := fmt.Sprintf("banlevel:%s", ip)
 
-	return true, nil // temp
+	// 1. Проверяем бан
+	isBanned, err := r.client.Exists(ctx, banKey).Result()
+	if err != nil {
+		return false, fmt.Errorf("failed to check ban: %w", err)
+	}
+	if isBanned > 0 {
+		return false, nil
+	}
+
+	// 2. Инкремент запроса
+	count, err := r.client.Incr(ctx, countKey).Result()
+	if err != nil {
+		return false, fmt.Errorf("failed to increment counter: %w", err)
+	}
+
+	if count == 1 {
+		// Устанавливаем TTL на первый запрос
+		r.client.Expire(ctx, countKey, 60*time.Second)
+	}
+
+	if count > 9 {
+		// Получаем текущий уровень бана
+		banLevel, _ := r.client.Get(ctx, levelKey).Int()
+		if banLevel == 0 {
+			banLevel = 1
+		} else {
+			banLevel *= 3 // экспоненциальный рост
+		}
+
+		banDuration := time.Duration(banLevel) * time.Minute
+		r.client.Set(ctx, banKey, "1", banDuration)
+		r.client.Set(ctx, levelKey, banLevel, 0)
+
+		return false, nil
+	}
+
+	return true, nil
 }
 
-func SendEvent(ctx context.Context, payload models.Event) error {
-	return nil // temp
+func (r *Redis) SendEvent(ctx context.Context, payload models.Event) error {
+	// выглядит как полный кал, temp
+	data, err := json.Marshal(payload.Payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal payload: %w", err)
+	}
+
+	// здесь плохая аллокация, будет срать нам GC
+	key := fmt.Sprintf("events:%s", payload.Type)
+	err = r.client.RPush(ctx, key, data).Err()
+	if err != nil {
+		return fmt.Errorf("failed to send event to redis: %w", err)
+	}
+
+	return nil
 }
