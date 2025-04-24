@@ -10,6 +10,23 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+func LimiterInterceptor(cfg *config.Internal) grpc.UnaryServerInterceptor {
+	return func(
+		ctx context.Context,
+		req interface{},
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (interface{}, error) {
+
+		// здесь суем реализацию для Redis сервера, который будет проверять каждый айпи на спам
+		// 1. спам есть - баним этого фаггота по экспоненте
+		// 2. спама нет - просто счетчик на +1
+
+		return nil, nil // temp, заглушка
+
+	}
+}
+
 func ValidationInterceptor(cfg *config.Internal) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -17,6 +34,7 @@ func ValidationInterceptor(cfg *config.Internal) grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
+
 		if _, ok := req.(*payment.GetPaymentUrlRequest); !ok {
 			return nil, status.Error(codes.InvalidArgument, "Invalid request type")
 		}
@@ -24,6 +42,7 @@ func ValidationInterceptor(cfg *config.Internal) grpc.UnaryServerInterceptor {
 			return nil, err
 		}
 		return handler(ctx, req)
+
 	}
 }
 
