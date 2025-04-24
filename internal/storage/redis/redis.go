@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"payment/internal/config"
+	"payment/internal/domain/models"
 	"payment/internal/lib/logger/sl"
 	"time"
 
@@ -52,11 +53,13 @@ func (r *Redis) Close() {
 
 }
 
-func (r *Redis) AllowRequest() (bool, error) {
+// TODO реализовать два метода этих, и жить спокойно <3 <3
+
+func (r *Redis) Allow(ctx context.Context, ip string) (bool, error) {
 
 	return true, nil // temp
 }
 
-func SendEvent() error {
+func SendEvent(ctx context.Context, payload models.Event) error {
 	return nil // temp
 }

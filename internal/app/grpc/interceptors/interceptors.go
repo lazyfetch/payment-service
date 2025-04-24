@@ -2,15 +2,22 @@ package interceptors
 
 import (
 	"context"
+	"net"
 	"payment/internal/config"
 	"payment/proto/gen/payment"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
-func LimiterInterceptor(cfg *config.Internal) grpc.UnaryServerInterceptor {
+// В редисе реализуем этот интерфейс
+type RateLimiter interface {
+	Allow(ctx context.Context, ip string) (bool, error)
+}
+
+func LimiterInterceptor(cfg *config.Internal, limiter RateLimiter) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req interface{},
@@ -18,13 +25,37 @@ func LimiterInterceptor(cfg *config.Internal) grpc.UnaryServerInterceptor {
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
 
-		// здесь суем реализацию для Redis сервера, который будет проверять каждый айпи на спам
-		// 1. спам есть - баним этого фаггота по экспоненте
-		// 2. спама нет - просто счетчик на +1
-
-		return nil, nil // temp, заглушка
-
+		// Получаем socket
+		p, ok := peer.FromContext(ctx)
+		if !ok {
+			return nil, status.Error(codes.Internal, "something wrong") // temp
+		}
+		// Парсим ip
+		addr := p.Addr.String()
+		ip, err := extractIP(addr)
+		if err != nil {
+			return nil, status.Error(codes.Internal, "something wrong")
+		}
+		// Получаем условие
+		cond, err := limiter.Allow(ctx, ip)
+		if err != nil {
+			return nil, status.Error(codes.Internal, "something wrong") // temp
+		}
+		// Проверяем условие
+		if !cond {
+			return nil, status.Error(codes.ResourceExhausted, "too many requests")
+		}
+		// Если все ок возвращаем хендлер, и пропускаем этого мамкиного спамера
+		return handler(ctx, req)
 	}
+}
+
+func extractIP(addr string) (string, error) {
+	ip, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return "", err
+	}
+	return ip, nil
 }
 
 func ValidationInterceptor(cfg *config.Internal) grpc.UnaryServerInterceptor {
@@ -36,7 +67,7 @@ func ValidationInterceptor(cfg *config.Internal) grpc.UnaryServerInterceptor {
 	) (interface{}, error) {
 
 		if _, ok := req.(*payment.GetPaymentUrlRequest); !ok {
-			return nil, status.Error(codes.InvalidArgument, "Invalid request type")
+			return nil, status.Error(codes.InvalidArgument, "invalid request type")
 		}
 		if err := ValidateGetPaymentUrl(cfg, req.(*payment.GetPaymentUrlRequest)); err != nil {
 			return nil, err
