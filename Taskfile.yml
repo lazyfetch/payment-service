@@ -2,7 +2,7 @@ version: "3"
 
 tasks:
   
-  dev-env:
+  dev-up:
     desc: "Up developer environment, docker-compose, migrations"
     env:
       CONFIG_PATH: "./config/dev.yaml"
@@ -10,6 +10,12 @@ tasks:
     cmds:
       - ./scripts/dev/dev-up.sh    
   
+  # hardcode...
+  dev-down:
+    desc: "Down developer environment, docker-compose"
+    cmds:
+      - docker-compose --env-file "./.env" -f "./docker-compose.yml" down -v --remove-orphans
+
   dev-app:
     desc: "Run application with dev config"
     env:

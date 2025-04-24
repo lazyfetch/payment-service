@@ -2,7 +2,7 @@
 
 set -e
 
-ENV_PATH="./.env"
+ENV_PATH=".env"
 COMPOSE_FILE="./docker-compose.yml"
 
 echo "Docker-compose up"

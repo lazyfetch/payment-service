@@ -172,6 +172,8 @@ func (s *Storage) CreateEvent(ctx context.Context, payload any) error {
 
 	log.Info("start create event")
 
+	// hardcode, we dont like this, make utils or something, dont do this
+	// temp !11!11
 	pl, err := json.Marshal(payload)
 	if err != nil {
 		log.Error("failed to marshal payload", sl.Err(err))
@@ -179,7 +181,8 @@ func (s *Storage) CreateEvent(ctx context.Context, payload any) error {
 	}
 
 	cmd, err := s.Conn.Exec(ctx, `INSERT INTO events (event_type, payload, status) VALUES
-	($1, $2, $3)`, "payments.success", pl, "new")
+	($1, $2, $3)`, "payments.success", pl, "new") // здесь операцию payment.success мы хардкодим, вообще так делать не надо как будто
+	// temp
 
 	if err != nil {
 		log.Error("unexpected error", sl.Err(err))
