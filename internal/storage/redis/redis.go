@@ -18,10 +18,10 @@ import (
 )
 
 type Redis struct {
-	log     *slog.Logger
-	client  *redis.Client
-	lockTTL time.Duration
-	reqTTL  time.Duration // look like a shit... temp
+	log    *slog.Logger
+	client *redis.Client
+	// lockTTL time.Duration
+	// reqTTL  time.Duration // look like a shit... temp
 }
 
 func New(log *slog.Logger, cfg config.RedisConfig) *Redis {
@@ -87,6 +87,14 @@ const (
 	keyLock = "lock"
 )
 
+const unlockScript = `
+if redis.call("get", KEYS[1]) == ARGV[1] then
+    return redis.call("del", KEYS[1])
+else
+    return 0
+end
+`
+
 func (r *Redis) Allow(ctx context.Context, ip string) (bool, error) {
 	// здесь ужасные аллокации, будут срать нам GC
 	// обязательно выносим все эти билдеры в отдельную функцию,
@@ -151,6 +159,10 @@ func (r *Redis) SendEvent(ctx context.Context, payload models.Event) error {
 	return nil
 }
 
+func (r *Redis) UserExists(ctx context.Context, userID string) (bool, error) {
+	return false, nil // return
+}
+
 // Need to realize, so now u can hardcode TTL, but later... NO!111!
 // А вообще мы не хотим давать право TTLить каким-то другим компонентам наш Redis
 // лучше его добавлять из конфига в структуру, и не парится
@@ -204,24 +216,48 @@ func (r *Redis) SetMinAmount(ctx context.Context, userID string, amount int) err
 	return nil
 }
 
-func (r *Redis) TryAcquireMinAmountLock(ctx context.Context, userID string) (bool, error) {
-	const op = "Redis.TryAcquireMinAmountLock"
+func (r *Redis) TryMinAmountLock(ctx context.Context, userID, lockID string) (bool, error) {
+	const op = "Redis.TryMinAmountLock"
 	log := r.log.With(
 		slog.String("op", op),
 	)
 
 	log.Info("start try to lock")
 
-	// key := buildKey(keyLock, userID)
+	key := buildKey(keyLock, userID)
 
-	return false, nil
+	// HARDCODE!!!! WARNING TEMP, 3 = SHIT DELETE ITS
+	ok, err := r.client.SetNX(ctx, key, lockID, 3).Result()
+
+	if err != nil {
+		log.Error("failed to lock", sl.Err(err))
+		return false, fmt.Errorf("%s:%w", op, err)
+	}
+
+	if !ok {
+		log.Warn("key already created")
+		return false, nil
+	}
+
+	return true, nil
 }
 
-func (r *Redis) ReleaseMinAmountLock(ctx context.Context, userID string) error {
+func (r *Redis) ReleaseMinAmountLock(ctx context.Context, userID, lockID string) (bool, error) {
 	const op = "Redis.ReleaseMinAmountLock"
 	log := r.log.With(
 		slog.String("op", op),
 	)
 
-	return nil
+	log.Info("start try to unlock") // temp
+
+	key := buildKey(keyLock, userID)
+
+	res, err := r.client.Eval(ctx, unlockScript, []string{key}, lockID).Result()
+	if err != nil {
+		return false, fmt.Errorf("%s:%w", op, err)
+	}
+
+	deleted, ok := res.(int64)
+	return ok && deleted > 1, nil
+
 }
