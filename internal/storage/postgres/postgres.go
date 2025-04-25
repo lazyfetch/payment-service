@@ -138,8 +138,8 @@ func (s *Postgres) IdempotencyAndStatus(ctx context.Context, idempotencyKey stri
 
 }
 
-func (s *Postgres) GetMinAmountByUser(ctx context.Context, userID string) (int64, error) {
-	const op = "Postgres.User"
+func (s *Postgres) GetMinAmount(ctx context.Context, userID string) (int64, error) {
+	const op = "Postgres.GetMinAmount"
 	var minAmount int64
 
 	log := s.log.With(

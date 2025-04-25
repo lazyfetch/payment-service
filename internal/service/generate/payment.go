@@ -17,7 +17,7 @@ var (
 )
 
 type UserProvider interface {
-	GetMinAmountByUser(ctx context.Context, userID string) (int64, error)
+	GetMinAmountWithCache(ctx context.Context, userID string) (int64, error)
 }
 
 type GeneratePaymentURL interface {
@@ -55,7 +55,7 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 
 	log.Info("attemping to generate url")
 
-	minAmount, err := p.userprv.GetMinAmountByUser(ctx, req.UserID)
+	minAmount, err := p.userprv.GetMinAmountWithCache(ctx, req.UserID)
 
 	if err != nil {
 		if errors.Is(err, storage.ErrUserIDNotFound) {

@@ -10,6 +10,7 @@ import (
 	confirmsrv "payment/internal/service/confirm"
 	eventsender "payment/internal/service/event_sender"
 	generatesrv "payment/internal/service/generate"
+	"payment/internal/storage"
 	"payment/internal/storage/postgres"
 	Redis "payment/internal/storage/redis"
 	"time"
@@ -24,8 +25,7 @@ type App struct {
 
 func New(log *slog.Logger, config *config.Config) *App {
 
-	// VERY temp
-
+	// VERY temp and very shit
 	t := time.Second * 5
 	sender := eventsender.Sender{Log: log}
 	sender.StartProcessEvents(context.Background(), t)
@@ -34,16 +34,22 @@ func New(log *slog.Logger, config *config.Config) *App {
 	gvkassa := &govnokassa.Govnokassa{}
 
 	// init db
-	storage := postgres.New(log, config.Postgres)
+	db := postgres.New(log, config.Postgres)
 
 	// init redis
-	redis := Redis.New(log, config.Redis)
+	cache := Redis.New(log, config.Redis)
+
+	// init compositor
+	composite := &storage.Composite{
+		DBProvider:    db,
+		CacheProvider: cache,
+	}
 
 	// init gen service
-	generateService := generatesrv.New(log, storage, storage, gvkassa)
+	generateService := generatesrv.New(log, db, composite, gvkassa)
 
 	// init webhook service
-	confirmService := confirmsrv.New(log, storage, storage, gvkassa)
+	confirmService := confirmsrv.New(log, db, db, gvkassa)
 
 	// init grpc
 	grpcApp := grpcapp.New(log, generateService, config)
@@ -51,5 +57,5 @@ func New(log *slog.Logger, config *config.Config) *App {
 	// init webhook
 	webhookApp := webhookapp.New(log, confirmService, config.Webhook.Port)
 
-	return &App{GRPCServer: grpcApp, Webhook: webhookApp, Redis: redis, Storage: storage}
+	return &App{GRPCServer: grpcApp, Webhook: webhookApp, Redis: cache, Storage: db}
 }

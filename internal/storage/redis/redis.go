@@ -3,19 +3,25 @@ package Redis
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"payment/internal/config"
 	"payment/internal/domain/models"
 	"payment/internal/lib/logger/sl"
+	"payment/internal/storage"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
 type Redis struct {
-	log    *slog.Logger
-	client *redis.Client
+	log     *slog.Logger
+	client  *redis.Client
+	lockTTL time.Duration
+	reqTTL  time.Duration // look like a shit... temp
 }
 
 func New(log *slog.Logger, cfg config.RedisConfig) *Redis {
@@ -54,15 +60,40 @@ func (r *Redis) Close() {
 
 }
 
+func buildKey(parts ...string) string {
+	var b strings.Builder
+
+	for i, part := range parts {
+		if i > 0 {
+			b.WriteByte(':')
+		}
+		b.WriteString(part)
+	}
+
+	return b.String()
+}
+
 // TODO реализовать два метода этих, и жить спокойно <3 <3
+
+const (
+	keyBan      = "ban"
+	keyRequests = "requests"
+	keyBanLevel = "banlevel"
+
+	keyMinAmount = "min_amount"
+
+	keyEvents = "events"
+
+	keyLock = "lock"
+)
 
 func (r *Redis) Allow(ctx context.Context, ip string) (bool, error) {
 	// здесь ужасные аллокации, будут срать нам GC
 	// обязательно выносим все эти билдеры в отдельную функцию,
 	// и туда протягиваем конфиг, или шаманим как угодно temp
-	banKey := fmt.Sprintf("ban:%s", ip)
-	countKey := fmt.Sprintf("requests:%s", ip)
-	levelKey := fmt.Sprintf("banlevel:%s", ip)
+	banKey := buildKey(keyBan, ip)
+	countKey := buildKey(keyRequests, ip)
+	levelKey := buildKey(keyBanLevel, ip)
 
 	// 1. Проверяем бан
 	isBanned, err := r.client.Exists(ctx, banKey).Result()
@@ -103,6 +134,7 @@ func (r *Redis) Allow(ctx context.Context, ip string) (bool, error) {
 	return true, nil
 }
 
+// temp потому что отстой, чисто через список делаем, не надежно выглядит, мб для теста ток...
 func (r *Redis) SendEvent(ctx context.Context, payload models.Event) error {
 	// выглядит как полный кал, temp
 	data, err := json.Marshal(payload.Payload)
@@ -110,12 +142,86 @@ func (r *Redis) SendEvent(ctx context.Context, payload models.Event) error {
 		return fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	// здесь плохая аллокация, будет срать нам GC
-	key := fmt.Sprintf("events:%s", payload.Type)
+	key := buildKey(keyEvents, payload.Type)
 	err = r.client.RPush(ctx, key, data).Err()
 	if err != nil {
 		return fmt.Errorf("failed to send event to redis: %w", err)
 	}
+
+	return nil
+}
+
+// Need to realize, so now u can hardcode TTL, but later... NO!111!
+// А вообще мы не хотим давать право TTLить каким-то другим компонентам наш Redis
+// лучше его добавлять из конфига в структуру, и не парится
+// Лучше еще default value поставить, чтоб не было проблем
+func (r *Redis) GetMinAmount(ctx context.Context, userID string) (int64, error) {
+	const op = "Redis.GetMinAmount"
+
+	log := r.log.With(
+		slog.String("op", op),
+		slog.String("user_id", userID),
+	)
+
+	log.Info("start check")
+	key := buildKey(keyMinAmount, userID)
+
+	value, err := r.client.Get(ctx, key).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			log.Warn("user_id not exists")
+			return 0, storage.ErrUserIDNotExists
+		}
+		log.Error("failed to check", sl.Err(err))
+		return 0, fmt.Errorf("%s:%w", op, err)
+	}
+
+	minAmount, err := strconv.ParseInt(value, 10, 64)
+
+	if err != nil {
+		log.Error("error to parse integer", sl.Err(err))
+	}
+
+	return minAmount, nil
+
+}
+
+func (r *Redis) SetMinAmount(ctx context.Context, userID string, amount int) error {
+	const op = "Redis.SetMinAmount"
+	log := r.log.With(
+		slog.String("op", op),
+	)
+
+	log.Info("start set")
+
+	key := buildKey(keyMinAmount, userID)
+
+	// EXTRA TEMP!!! SUPER TEMP!!! temp mean time.Duration()
+	if err := r.client.Set(ctx, key, amount, 2).Err(); err != nil {
+		log.Error("failed to set", sl.Err(err))
+	}
+
+	return nil
+}
+
+func (r *Redis) TryAcquireMinAmountLock(ctx context.Context, userID string) (bool, error) {
+	const op = "Redis.TryAcquireMinAmountLock"
+	log := r.log.With(
+		slog.String("op", op),
+	)
+
+	log.Info("start try to lock")
+
+	// key := buildKey(keyLock, userID)
+
+	return false, nil
+}
+
+func (r *Redis) ReleaseMinAmountLock(ctx context.Context, userID string) error {
+	const op = "Redis.ReleaseMinAmountLock"
+	log := r.log.With(
+		slog.String("op", op),
+	)
 
 	return nil
 }
