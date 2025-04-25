@@ -19,7 +19,7 @@ type App struct {
 	GRPCServer *grpcapp.App
 	Webhook    *webhookapp.App
 	Redis      *Redis.Redis
-	Storage    *postgres.Storage
+	Storage    *postgres.Postgres
 }
 
 func New(log *slog.Logger, config *config.Config) *App {

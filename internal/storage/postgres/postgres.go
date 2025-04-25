@@ -17,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Storage struct {
+type Postgres struct {
 	log  *slog.Logger
 	Conn *pgxpool.Pool
 }
@@ -27,7 +27,7 @@ func BuildDSN(c config.PostgresConfig) string {
 		c.User, c.Password, c.Host, c.Port, c.DBname)
 }
 
-func New(log *slog.Logger, config config.PostgresConfig) *Storage {
+func New(log *slog.Logger, config config.PostgresConfig) *Postgres {
 
 	conn, err := pgxpool.New(context.Background(), BuildDSN(config))
 	if err != nil {
@@ -43,16 +43,16 @@ func New(log *slog.Logger, config config.PostgresConfig) *Storage {
 
 	log.Info("postgres connection is successful")
 
-	return &Storage{log: log, Conn: conn}
+	return &Postgres{log: log, Conn: conn}
 }
 
-func (s *Storage) Stop() {
+func (s *Postgres) Stop() {
 	s.Conn.Close()
 	s.log.Info("postgres close connection")
 }
 
-func (s *Storage) CreatePayment(ctx context.Context, data *models.DBPayment) error {
-	const op = "Storage.CreatePayment"
+func (s *Postgres) CreatePayment(ctx context.Context, data *models.DBPayment) error {
+	const op = "Postgres.CreatePayment"
 
 	log := s.log.With(
 		slog.String("op", op),
@@ -79,8 +79,8 @@ func (s *Storage) CreatePayment(ctx context.Context, data *models.DBPayment) err
 	return nil
 }
 
-func (s *Storage) UpdatePayment(ctx context.Context, idemKey string) error {
-	const op = "Storage.Update"
+func (s *Postgres) UpdatePayment(ctx context.Context, idemKey string) error {
+	const op = "Postgres.Update"
 
 	log := s.log.With(
 		slog.String("op", op),
@@ -107,8 +107,8 @@ func (s *Storage) UpdatePayment(ctx context.Context, idemKey string) error {
 	return nil
 }
 
-func (s *Storage) IdempotencyAndStatus(ctx context.Context, idempotencyKey string) error {
-	const op = "Storage.IsIdempotencyKey"
+func (s *Postgres) IdempotencyAndStatus(ctx context.Context, idempotencyKey string) error {
+	const op = "Postgres.IsIdempotencyKey"
 
 	log := s.log.With(
 		slog.String("op", op),
@@ -138,8 +138,8 @@ func (s *Storage) IdempotencyAndStatus(ctx context.Context, idempotencyKey strin
 
 }
 
-func (s *Storage) GetMinAmountByUser(ctx context.Context, userID string) (int64, error) {
-	const op = "Storage.User"
+func (s *Postgres) GetMinAmountByUser(ctx context.Context, userID string) (int64, error) {
+	const op = "Postgres.User"
 	var minAmount int64
 
 	log := s.log.With(
@@ -163,8 +163,8 @@ func (s *Storage) GetMinAmountByUser(ctx context.Context, userID string) (int64,
 	return minAmount, nil
 }
 
-func (s *Storage) CreateEvent(ctx context.Context, payload any) error {
-	const op = "Storage.CreateEvent"
+func (s *Postgres) CreateEvent(ctx context.Context, payload any) error {
+	const op = "Postgres.CreateEvent"
 
 	log := s.log.With(
 		slog.String("op", op),
@@ -198,8 +198,8 @@ func (s *Storage) CreateEvent(ctx context.Context, payload any) error {
 
 }
 
-func (s *Storage) OutboxUpdatePaymentTx(ctx context.Context, idemKey string, payload any) error {
-	const op = "Storage.OutboxUpdatePaymentTx"
+func (s *Postgres) OutboxUpdatePaymentTx(ctx context.Context, idemKey string, payload any) error {
+	const op = "Postgres.OutboxUpdatePaymentTx"
 
 	log := s.log.With(
 		slog.String("op", op),
@@ -234,8 +234,8 @@ func (s *Storage) OutboxUpdatePaymentTx(ctx context.Context, idemKey string, pay
 }
 
 // Это временная шляпа, нужно использовать транзакцию что снизу
-func (s *Storage) GetNewEvent(ctx context.Context) (models.Event, error) {
-	const op = "Storage.GetNewEvent"
+func (s *Postgres) GetNewEvent(ctx context.Context) (models.Event, error) {
+	const op = "Postgres.GetNewEvent"
 
 	// Здесь мы должны получить payload + id, где status new или in_progress + ttl < now - 3 minut (или какой там ТТЛ)
 
@@ -249,17 +249,17 @@ func (s *Storage) GetNewEvent(ctx context.Context) (models.Event, error) {
 	return event, nil
 }
 
-func (s *Storage) UpdateEventTTL(ctx context.Context, id int) error {
+func (s *Postgres) UpdateEventTTL(ctx context.Context, id int) error {
 	// Здесь мы обновляем статус с new -> in_progress + TTL время которое = now + 3, условно говоря
 	return nil // temp
 }
 
-func (s *Storage) UpdateEventStatus(ctx context.Context, id int) error {
+func (s *Postgres) UpdateEventStatus(ctx context.Context, id int) error {
 	// Здесь в рамках транзакции мы ставим complete, ok, done или любой другой статус
 	return nil // temp
 }
 
-func (s *Storage) EventTx(ctx context.Context) error {
+func (s *Postgres) EventTx(ctx context.Context) error {
 
 	/*
 		BEGIN;
