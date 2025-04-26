@@ -5,6 +5,7 @@ import (
 	"net"
 	"payment/internal/config"
 	"payment/proto/gen/payment"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -14,16 +15,31 @@ import (
 
 // В редисе реализуем этот интерфейс
 type RateLimiter interface {
-	Allow(ctx context.Context, ip string) (bool, error)
+	Allow(ctx context.Context, ip string, window time.Duration, maxRequests int, banDurations []time.Duration) (bool, error)
 }
 
-func LimiterInterceptor(cfg *config.Internal, limiter RateLimiter) grpc.UnaryServerInterceptor {
+type LimiterOpts struct {
+	Enabled      bool
+	Window       time.Duration
+	MaxRequests  int
+	BanDurations []time.Duration
+}
+
+func LimiterInterceptor(lOpts LimiterOpts, limiter RateLimiter) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req interface{},
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
+
+		// temp
+		// Плохо, потому что такое обрабатывать на стадии
+		// Сборки, а не на стадии рабочей функции, поэтому
+		// Оборочивать этот момент, и не юзать такое на проде (пока можно)
+		if !lOpts.Enabled {
+			return handler(ctx, req)
+		}
 
 		// Получаем socket
 		p, ok := peer.FromContext(ctx)
@@ -37,7 +53,7 @@ func LimiterInterceptor(cfg *config.Internal, limiter RateLimiter) grpc.UnarySer
 			return nil, status.Error(codes.Internal, "something wrong")
 		}
 		// Получаем условие
-		cond, err := limiter.Allow(ctx, ip)
+		cond, err := limiter.Allow(ctx, ip, lOpts.Window, lOpts.MaxRequests, lOpts.BanDurations)
 		if err != nil {
 			return nil, status.Error(codes.Internal, "something wrong") // temp
 		}

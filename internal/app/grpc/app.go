@@ -18,10 +18,18 @@ type App struct {
 }
 
 func New(log *slog.Logger, paymentService paymentgrpc.PaymentService, RateLimiter interceptors.RateLimiter, cfg *config.Config) *App {
+
+	lOpts := interceptors.LimiterOpts{
+		Enabled:      cfg.RateLimiter.Enabled,
+		Window:       cfg.RateLimiter.Window,
+		MaxRequests:  cfg.RateLimiter.MaxRequests,
+		BanDurations: cfg.RateLimiter.BanDurations,
+	}
+
 	gRPCServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			interceptors.ValidationInterceptor(&cfg.Internal),
-			interceptors.LimiterInterceptor(&cfg.Internal, RateLimiter),
+			interceptors.LimiterInterceptor(lOpts, RateLimiter),
 		),
 	)
 

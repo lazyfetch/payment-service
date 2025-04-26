@@ -9,12 +9,13 @@ import (
 )
 
 type Config struct {
-	Env      string         `yaml:"env" env-default:"dev"`
-	GRPC     GRPCConfig     `yaml:"grpc"`
-	Postgres PostgresConfig `yaml:"postgres"`
-	Redis    RedisConfig    `yaml:"redis"`
-	Webhook  WebhookConfig  `yaml:"webhook"`
-	Internal Internal       `yaml:"internal"`
+	Env         string         `yaml:"env" env-default:"dev"`
+	GRPC        GRPCConfig     `yaml:"grpc"`
+	Postgres    PostgresConfig `yaml:"postgres"`
+	Redis       RedisConfig    `yaml:"redis"`
+	Webhook     WebhookConfig  `yaml:"webhook"`
+	Internal    Internal       `yaml:"internal"`
+	RateLimiter RateLimiter    `yaml:"rate_limiter"`
 }
 
 type GRPCConfig struct {
@@ -29,14 +30,11 @@ type RedisConfig struct {
 }
 
 type PostgresConfig struct {
-	Host         string        `yaml:"host"`
-	Port         int           `yaml:"port"`
-	User         string        `yaml:"user"`
-	DBname       string        `yaml:"dbname"`
-	Password     string        `yaml:"password" env:"POSTGRES_PASSWORD" env-required:"true"`
-	MaxConns     int           `yaml:"max_conns"`
-	ConnLifetime time.Duration `yaml:"conn_lifetime"`
-	ConnIDLE     time.Duration `yaml:"conn_idle"`
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	DBname   string `yaml:"dbname"`
+	Password string `yaml:"password" env:"POSTGRES_PASSWORD" env-required:"true"`
 }
 
 type WebhookConfig struct {
@@ -49,6 +47,13 @@ type Internal struct {
 	MaxAmount        int64         `yaml:"max_amount"`
 	MaxMessageLenght int           `yaml:"max_message_lenght"`
 	PaymentService   string        `yaml:"payment_service"`
+}
+
+type RateLimiter struct {
+	Enabled      bool            `yaml:"enabled"`
+	Window       time.Duration   `yaml:"window"`
+	MaxRequests  int             `yaml:"max_requests"`
+	BanDurations []time.Duration `yaml:"ban_durations"`
 }
 
 func MustLoad() *Config {

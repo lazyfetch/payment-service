@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"payment/internal/config"
 	"payment/internal/domain/models"
 	"payment/internal/lib/logger/sl"
 	"payment/internal/storage"
@@ -17,6 +16,12 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type RedisOpts struct {
+	Host string
+	Port int
+	DB   int
+}
+
 type Redis struct {
 	log    *slog.Logger
 	client *redis.Client
@@ -24,13 +29,13 @@ type Redis struct {
 	// reqTTL  time.Duration // look like a shit... temp
 }
 
-func New(log *slog.Logger, cfg config.RedisConfig) *Redis {
-	socket := fmt.Sprintf("%s:%v", cfg.Host, cfg.Port)
+func New(log *slog.Logger, redisOpts RedisOpts) *Redis {
+	socket := fmt.Sprintf("%s:%v", redisOpts.Host, redisOpts.Port)
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     socket,
 		Password: "", // temp for production i think we need pass
-		DB:       cfg.DB,
+		DB:       redisOpts.DB,
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // temp, loks like hardcode
@@ -72,8 +77,8 @@ func buildKey(parts ...string) string {
 	return b.String()
 }
 
-// temp
-func (r *Redis) Allow(ctx context.Context, ip string) (bool, error) {
+// false - бан есть, true - все чисто
+func (r *Redis) Allow(ctx context.Context, ip string, window time.Duration, maxRequests int, banDurations []time.Duration) (bool, error) {
 
 	banKey := buildKey(KeyBan, ip)
 	countKey := buildKey(KeyRequests, ip)
@@ -96,19 +101,25 @@ func (r *Redis) Allow(ctx context.Context, ip string) (bool, error) {
 
 	if count == 1 {
 		// Устанавливаем TTL на первый запрос
-		r.client.Expire(ctx, countKey, 60*time.Second)
+		r.client.Expire(ctx, countKey, window)
 	}
 
-	if count > 9 {
+	// если запросов больше чем максимально допустимо
+	// Получаем уровень бана, каждый индекс бана = большему времени бана
+	// уровень бана не должен привышать максимальное значение len(banDurations - 1)
+
+	if count > int64(maxRequests) {
 		// Получаем текущий уровень бана
 		banLevel, _ := r.client.Get(ctx, levelKey).Int()
-		if banLevel == 0 {
-			banLevel = 1
+
+		var banDuration time.Duration
+
+		if banLevel >= len(banDurations)-1 {
+			banDuration = banDurations[len(banDurations)-1]
 		} else {
-			banLevel *= 3 // экспоненциальный рост
+			banDuration = banDurations[banLevel]
 		}
 
-		banDuration := time.Duration(banLevel) * time.Minute
 		r.client.Set(ctx, banKey, "1", banDuration)
 		r.client.Set(ctx, levelKey, banLevel, 0)
 

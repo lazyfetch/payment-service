@@ -27,14 +27,24 @@ func New(log *slog.Logger, config *config.Config) *App {
 	//sender := eventsender.Sender{Log: log}
 	// sender.StartProcessEvents(context.Background(), t)
 
-	// payment service
+	// payment service mock
 	gvkassa := &govnokassa.Govnokassa{}
 
 	// init db
-	db := postgres.New(log, config.Postgres)
+	db := postgres.New(log, postgres.PostgresOpts{
+		User:     config.Postgres.User,
+		Password: config.Postgres.Password,
+		Host:     config.Postgres.Host,
+		Port:     config.Postgres.Port,
+		DBname:   config.Postgres.DBname,
+	})
 
 	// init redis
-	cache := Redis.New(log, config.Redis)
+	cache := Redis.New(log, Redis.RedisOpts{
+		Host: config.Redis.Host,
+		Port: config.Redis.Port,
+		DB:   config.Redis.DB,
+	})
 
 	// init compositor
 	composite := &storage.Composite{
@@ -43,10 +53,10 @@ func New(log *slog.Logger, config *config.Config) *App {
 		Log:           log,
 	}
 
-	// init gen service
+	// init generate service
 	generateService := generatesrv.New(log, db, composite, gvkassa)
 
-	// init webhook service
+	// init configrm service
 	confirmService := confirmsrv.New(log, db, db, gvkassa)
 
 	// init grpc

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"payment/internal/config"
 	"payment/internal/domain/models"
 	"payment/internal/lib/logger/sl"
 	"payment/internal/storage"
@@ -17,19 +16,27 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type PostgresOpts struct {
+	User     string
+	Password string
+	Host     string
+	Port     int
+	DBname   string
+}
+
 type Postgres struct {
 	log  *slog.Logger
 	Conn *pgxpool.Pool
 }
 
-func BuildDSN(c config.PostgresConfig) string {
+func BuildDSN(pgOpts PostgresOpts) string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		c.User, c.Password, c.Host, c.Port, c.DBname)
+		pgOpts.User, pgOpts.Password, pgOpts.Host, pgOpts.Port, pgOpts.DBname)
 }
 
-func New(log *slog.Logger, config config.PostgresConfig) *Postgres {
+func New(log *slog.Logger, postgresOpts PostgresOpts) *Postgres {
 
-	conn, err := pgxpool.New(context.Background(), BuildDSN(config))
+	conn, err := pgxpool.New(context.Background(), BuildDSN(postgresOpts))
 	if err != nil {
 		panic(err)
 	}
