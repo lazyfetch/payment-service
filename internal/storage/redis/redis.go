@@ -1,4 +1,4 @@
-package Redis
+package redis
 
 import (
 	"context"
@@ -73,35 +73,12 @@ func buildKey(parts ...string) string {
 	return b.String()
 }
 
-// TODO реализовать два метода этих, и жить спокойно <3 <3
-
-const (
-	keyBan      = "ban"
-	keyRequests = "requests"
-	keyBanLevel = "banlevel"
-
-	keyMinAmount = "min_amount"
-
-	keyEvents = "events"
-
-	keyLock = "lock"
-)
-
-const unlockScript = `
-if redis.call("get", KEYS[1]) == ARGV[1] then
-    return redis.call("del", KEYS[1])
-else
-    return 0
-end
-`
-
+// temp
 func (r *Redis) Allow(ctx context.Context, ip string) (bool, error) {
-	// здесь ужасные аллокации, будут срать нам GC
-	// обязательно выносим все эти билдеры в отдельную функцию,
-	// и туда протягиваем конфиг, или шаманим как угодно temp
-	banKey := buildKey(keyBan, ip)
-	countKey := buildKey(keyRequests, ip)
-	levelKey := buildKey(keyBanLevel, ip)
+
+	banKey := buildKey(KeyBan, ip)
+	countKey := buildKey(KeyRequests, ip)
+	levelKey := buildKey(KeyBanLevel, ip)
 
 	// 1. Проверяем бан
 	isBanned, err := r.client.Exists(ctx, banKey).Result()
@@ -150,7 +127,7 @@ func (r *Redis) SendEvent(ctx context.Context, payload models.Event) error {
 		return fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	key := buildKey(keyEvents, payload.Type)
+	key := buildKey(KeyEvents, payload.Type)
 	err = r.client.RPush(ctx, key, data).Err()
 	if err != nil {
 		return fmt.Errorf("failed to send event to redis: %w", err)
@@ -159,14 +136,6 @@ func (r *Redis) SendEvent(ctx context.Context, payload models.Event) error {
 	return nil
 }
 
-func (r *Redis) UserExists(ctx context.Context, userID string) (bool, error) {
-	return false, nil // return
-}
-
-// Need to realize, so now u can hardcode TTL, but later... NO!111!
-// А вообще мы не хотим давать право TTLить каким-то другим компонентам наш Redis
-// лучше его добавлять из конфига в структуру, и не парится
-// Лучше еще default value поставить, чтоб не было проблем
 func (r *Redis) GetMinAmount(ctx context.Context, userID string) (int64, error) {
 	const op = "Redis.GetMinAmount"
 
@@ -176,7 +145,7 @@ func (r *Redis) GetMinAmount(ctx context.Context, userID string) (int64, error) 
 	)
 
 	log.Info("start check")
-	key := buildKey(keyMinAmount, userID)
+	key := buildKey(KeyMinAmount, userID)
 
 	value, err := r.client.Get(ctx, key).Result()
 	if err != nil {
@@ -198,7 +167,8 @@ func (r *Redis) GetMinAmount(ctx context.Context, userID string) (int64, error) 
 
 }
 
-func (r *Redis) SetMinAmount(ctx context.Context, userID string, amount int) error {
+// temp todo: провести конфиг для TTL нормально
+func (r *Redis) SetMinAmount(ctx context.Context, userID string, amount int64) error {
 	const op = "Redis.SetMinAmount"
 	log := r.log.With(
 		slog.String("op", op),
@@ -206,16 +176,18 @@ func (r *Redis) SetMinAmount(ctx context.Context, userID string, amount int) err
 
 	log.Info("start set")
 
-	key := buildKey(keyMinAmount, userID)
-
-	// EXTRA TEMP!!! SUPER TEMP!!! temp mean time.Duration()
+	key := buildKey(KeyMinAmount, userID)
+	// temp ttl value
 	if err := r.client.Set(ctx, key, amount, 2).Err(); err != nil {
 		log.Error("failed to set", sl.Err(err))
 	}
 
+	log.Info("success")
+
 	return nil
 }
 
+/*
 func (r *Redis) TryMinAmountLock(ctx context.Context, userID, lockID string) (bool, error) {
 	const op = "Redis.TryMinAmountLock"
 	log := r.log.With(
@@ -224,7 +196,7 @@ func (r *Redis) TryMinAmountLock(ctx context.Context, userID, lockID string) (bo
 
 	log.Info("start try to lock")
 
-	key := buildKey(keyLock, userID)
+	key := buildKey(KeyMinAmountLock, userID)
 
 	// HARDCODE!!!! WARNING TEMP, 3 = SHIT DELETE ITS
 	ok, err := r.client.SetNX(ctx, key, lockID, 3).Result()
@@ -239,6 +211,8 @@ func (r *Redis) TryMinAmountLock(ctx context.Context, userID, lockID string) (bo
 		return false, nil
 	}
 
+	log.Info("success lock")
+
 	return true, nil
 }
 
@@ -248,16 +222,24 @@ func (r *Redis) ReleaseMinAmountLock(ctx context.Context, userID, lockID string)
 		slog.String("op", op),
 	)
 
-	log.Info("start try to unlock") // temp
+	log.Info("start try to unlock")
 
-	key := buildKey(keyLock, userID)
+	key := buildKey(KeyMinAmountLock, userID)
 
-	res, err := r.client.Eval(ctx, unlockScript, []string{key}, lockID).Result()
+	res, err := r.client.Eval(ctx, UnlockScript, []string{key}, lockID).Result()
 	if err != nil {
 		return false, fmt.Errorf("%s:%w", op, err)
 	}
 
 	deleted, ok := res.(int64)
-	return ok && deleted > 1, nil
+	if !ok && deleted < 1 {
+		log.Error("no performed on fields")
+		return false, fmt.Errorf("no performed on fields")
+	}
+
+	log.Info("success unlock")
+
+	return true, nil
 
 }
+*/

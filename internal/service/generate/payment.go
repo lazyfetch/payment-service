@@ -58,7 +58,7 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 	minAmount, err := p.userprv.GetMinAmountWithCache(ctx, req.UserID)
 
 	if err != nil {
-		if errors.Is(err, storage.ErrUserIDNotFound) {
+		if errors.Is(err, storage.ErrUserIDNotExists) {
 			log.Error("user_id not found")
 			return "", ErrInvalidUserID
 		}

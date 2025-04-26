@@ -233,9 +233,7 @@ func (s *Postgres) OutboxUpdatePaymentTx(ctx context.Context, idemKey string, pa
 	return nil
 }
 
-func (s *Postgres) UserExists(ctx context.Context, userID string) (bool, error) {
-	return false, nil // temp
-}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Это временная шляпа, нужно использовать транзакцию что снизу
 func (s *Postgres) GetNewEvent(ctx context.Context) (models.Event, error) {

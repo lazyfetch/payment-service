@@ -2,105 +2,64 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
-	"payment/internal/lib/uuid"
-	"time"
+
+	"github.com/redis/go-redis/v9"
+	"golang.org/x/sync/singleflight"
 )
 
 type DBProvider interface {
 	GetMinAmount(ctx context.Context, userID string) (int64, error)
-
-	UserExists(ctx context.Context, userID string) (bool, error)
 }
 
 type CacheProvider interface {
-	UserExists(ctx context.Context, userID string) (bool, error)
-
 	GetMinAmount(ctx context.Context, userID string) (int64, error)
-	SetMinAmount(ctx context.Context, userID string, amount int) error
-
-	// For distributed singleflight pattern (singleflight pattern)
-	// So we can say, it's like mutex, just for cache :)
-	TryMinAmountLock(ctx context.Context, userID, lockID string) (bool, error)
-	ReleaseMinAmountLock(ctx context.Context, userID, lockID string) (bool, error)
+	SetMinAmount(ctx context.Context, userID string, amount int64) error
 }
 
 type Composite struct {
 	Log           *slog.Logger
 	DBProvider    DBProvider
 	CacheProvider CacheProvider
+	sfGroup       singleflight.Group // в app.go протянуть обязательно, хотя вроде и nil нормально будет пахать
 }
 
-func (c *Composite) UserExists(ctx context.Context, userID string) (bool, error) {
-	return false, nil // temp
-}
-
-// ЗДЕСЬ ПЛАН ТАКОЙ, СНАЧАЛА ПРОВЕРЯЕМ IsExistsWithCache
-// если ЮЗЕРА ВООБЩЕ НЕТУ, ТО МЫ И НЕ ПРОДОЛЖАЕМ ДАЛЬШЕ
+// GetMinAmountWithCache получает минимальную сумму через кэш или базу
 func (c *Composite) GetMinAmountWithCache(ctx context.Context, userID string) (int64, error) {
 	const op = "Composite.GetMinAmountWithCache"
 
-	log := c.Log.With(
-		slog.String("op", op),
-		slog.String("user_id", userID),
-	)
-
-	log.Info("start operation")
-
-	log.Info("check if user_id exists")
-
-	ok, err := c.UserExists(ctx, userID)
-	if err != nil {
-		return 0, fmt.Errorf("%s:%w", op, err)
-	}
-
-	// Здесь короче каша выходит, давай завтра доделаем, седня и так +400 строк где-то, окей нормально
-	if !ok {
-		return 0, ErrUserIDNotExists
-	}
-
-	// Эта херня называется distributed singleflight
 	minAmount, err := c.CacheProvider.GetMinAmount(ctx, userID)
-	if err != nil {
-		if errors.Is(err, ErrUserIDNotExists) {
 
-			log.Warn("min_amount not found")
-
-			lockID := uuid.UUID()
-			ok, err := c.CacheProvider.TryMinAmountLock(ctx, userID, lockID)
-
-			if err != nil {
-				return 0, fmt.Errorf("%s:%w", op, err)
-			}
-
-			if !ok {
-				time.Sleep(time.Millisecond * 250) // temp, look like a shit
-				return c.GetMinAmountWithCache(ctx, userID)
-			}
-
+	// good path
+	if err == nil {
+		if minAmount == 0 {
+			return 0, ErrUserIDNotExists
 		}
+		return minAmount, nil
+	}
+	// unexpected
+	if err != redis.Nil {
 		return 0, fmt.Errorf("%s:%w", op, err)
 	}
 
-	// Сначала проверяем есть ли у нас в redis такая штука, то есть
-	// ключ в редисе +- будет такой <min_amount:userID>:value
+	v, err, _ := c.sfGroup.Do("min_amount_"+userID, func() (interface{}, error) {
+		amount, err := c.DBProvider.GetMinAmount(ctx, userID)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
 
-	// Если нету, значит блокируем через <lock:min_amount:userID>
-	// SET lock:min_amount:<userID> "1" NX EX 5 где NX - если не существует, EX 5 - истекает через 5 минут
-	// if !TryAcquireMinAmountLock {return err} ну тут надо будет обернуть все правильно, чтобы без херни
+				return int64(0), ErrUserIDNotExists
+			}
+			return int64(0), fmt.Errorf("%s:%w", op, err)
+		}
 
-	// DBProvider.GetMinAmount()
-
-	// CacheProvider.SetMinAmount()
-
-	// DEL lock:min_amount:<userID>
-	// т.е ReleaseMinAmountLock()
-
-	// } return data тут типа рекурсия должна быть, пон.
-
-	// return data
-
-	return minAmount, nil // temp
+		_ = c.CacheProvider.SetMinAmount(ctx, userID, amount)
+		return amount, nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return v.(int64), nil
 }
