@@ -19,10 +19,8 @@ type App struct {
 
 func New(log *slog.Logger, paymentService paymentgrpc.PaymentService, RateLimiter interceptors.RateLimiter, cfg *config.Config) *App {
 	gRPCServer := grpc.NewServer(
-		grpc.UnaryInterceptor(
+		grpc.ChainUnaryInterceptor(
 			interceptors.ValidationInterceptor(&cfg.Internal),
-		),
-		grpc.UnaryInterceptor(
 			interceptors.LimiterInterceptor(&cfg.Internal, RateLimiter),
 		),
 	)
