@@ -100,7 +100,7 @@ func (r *Redis) Allow(ctx context.Context, ip string, window time.Duration, maxR
 	}
 
 	if count == 1 {
-		// Устанавливаем TTL на первый запрос
+		// Устанавливаем window TTL на первый запрос
 		r.client.Expire(ctx, countKey, window)
 	}
 
@@ -110,7 +110,14 @@ func (r *Redis) Allow(ctx context.Context, ip string, window time.Duration, maxR
 
 	if count > int64(maxRequests) {
 		// Получаем текущий уровень бана
-		banLevel, _ := r.client.Get(ctx, levelKey).Int()
+		banLevel, err := r.client.Get(ctx, levelKey).Int()
+		if err != nil {
+			if errors.Is(err, redis.Nil) {
+				r.client.Set(ctx, levelKey, banLevel, 0)
+				// temp, hardcode
+				r.client.Expire(ctx, levelKey, time.Duration(time.Minute*30))
+			}
+		}
 
 		var banDuration time.Duration
 
@@ -118,10 +125,10 @@ func (r *Redis) Allow(ctx context.Context, ip string, window time.Duration, maxR
 			banDuration = banDurations[len(banDurations)-1]
 		} else {
 			banDuration = banDurations[banLevel]
+			r.client.Incr(ctx, levelKey).Result()
 		}
 
 		r.client.Set(ctx, banKey, "1", banDuration)
-		r.client.Set(ctx, levelKey, banLevel, 0)
 
 		return false, nil
 	}
