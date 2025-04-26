@@ -30,7 +30,7 @@ func New(log *slog.Logger, cfg config.RedisConfig) *Redis {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     socket,
 		Password: "", // temp for production i think we need pass
-		DB:       0,  // dunno? ??? temp
+		DB:       cfg.DB,
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // temp, loks like hardcode
@@ -50,7 +50,6 @@ func New(log *slog.Logger, cfg config.RedisConfig) *Redis {
 }
 
 func (r *Redis) Close() {
-	// const op = "redis.Close"
 
 	if err := r.client.Close(); err != nil {
 		r.log.Error("redis closing connection err:", sl.Err(err))
@@ -187,60 +186,3 @@ func (r *Redis) SetMinAmount(ctx context.Context, userID string, amount int64) e
 
 	return nil
 }
-
-/*
-func (r *Redis) TryMinAmountLock(ctx context.Context, userID, lockID string) (bool, error) {
-	const op = "Redis.TryMinAmountLock"
-	log := r.log.With(
-		slog.String("op", op),
-	)
-
-	log.Info("start try to lock")
-
-	key := buildKey(KeyMinAmountLock, userID)
-
-	// HARDCODE!!!! WARNING TEMP, 3 = SHIT DELETE ITS
-	ok, err := r.client.SetNX(ctx, key, lockID, 3).Result()
-
-	if err != nil {
-		log.Error("failed to lock", sl.Err(err))
-		return false, fmt.Errorf("%s:%w", op, err)
-	}
-
-	if !ok {
-		log.Warn("key already created")
-		return false, nil
-	}
-
-	log.Info("success lock")
-
-	return true, nil
-}
-
-func (r *Redis) ReleaseMinAmountLock(ctx context.Context, userID, lockID string) (bool, error) {
-	const op = "Redis.ReleaseMinAmountLock"
-	log := r.log.With(
-		slog.String("op", op),
-	)
-
-	log.Info("start try to unlock")
-
-	key := buildKey(KeyMinAmountLock, userID)
-
-	res, err := r.client.Eval(ctx, UnlockScript, []string{key}, lockID).Result()
-	if err != nil {
-		return false, fmt.Errorf("%s:%w", op, err)
-	}
-
-	deleted, ok := res.(int64)
-	if !ok && deleted < 1 {
-		log.Error("no performed on fields")
-		return false, fmt.Errorf("no performed on fields")
-	}
-
-	log.Info("success unlock")
-
-	return true, nil
-
-}
-*/

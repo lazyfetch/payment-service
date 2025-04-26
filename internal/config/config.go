@@ -25,6 +25,7 @@ type GRPCConfig struct {
 type RedisConfig struct {
 	Host string `yaml:"host"`
 	Port int    `yaml:"port"`
+	DB   int    `yaml:"db"`
 }
 
 type PostgresConfig struct {

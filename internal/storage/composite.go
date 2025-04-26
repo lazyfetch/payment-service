@@ -23,7 +23,7 @@ type Composite struct {
 	Log           *slog.Logger
 	DBProvider    DBProvider
 	CacheProvider CacheProvider
-	sfGroup       singleflight.Group // в app.go протянуть обязательно, хотя вроде и nil нормально будет пахать
+	sfGroup       singleflight.Group
 }
 
 // GetMinAmountWithCache получает минимальную сумму через кэш или базу

@@ -17,10 +17,13 @@ type App struct {
 	port       int
 }
 
-func New(log *slog.Logger, paymentService paymentgrpc.PaymentService, cfg *config.Config) *App {
+func New(log *slog.Logger, paymentService paymentgrpc.PaymentService, RateLimiter interceptors.RateLimiter, cfg *config.Config) *App {
 	gRPCServer := grpc.NewServer(
 		grpc.UnaryInterceptor(
 			interceptors.ValidationInterceptor(&cfg.Internal),
+		),
+		grpc.UnaryInterceptor(
+			interceptors.LimiterInterceptor(&cfg.Internal, RateLimiter),
 		),
 	)
 
