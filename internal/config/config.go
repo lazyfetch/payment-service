@@ -42,6 +42,7 @@ type WebhookConfig struct {
 }
 
 type Internal struct {
+	UserTTL          time.Duration `yaml:"user_TTL"`
 	EventSenderTTL   time.Duration `yaml:"event_sender_TTL"`
 	MaxNameLength    int           `yaml:"max_name_length"`
 	MaxAmount        int64         `yaml:"max_amount"`

@@ -26,9 +26,16 @@ func New(log *slog.Logger, paymentService paymentgrpc.PaymentService, RateLimite
 		BanDurations: cfg.RateLimiter.BanDurations,
 	}
 
+	vOpts := interceptors.ValidateOpts{
+		MaxNameLength:    cfg.Internal.MaxNameLength,
+		MaxAmount:        cfg.Internal.MaxAmount,
+		MaxMessageLenght: cfg.Internal.MaxMessageLenght,
+		PaymentService:   cfg.Internal.PaymentService,
+	}
+
 	gRPCServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			interceptors.ValidationInterceptor(&cfg.Internal),
+			interceptors.ValidationInterceptor(vOpts),
 			interceptors.LimiterInterceptor(lOpts, RateLimiter),
 		),
 	)

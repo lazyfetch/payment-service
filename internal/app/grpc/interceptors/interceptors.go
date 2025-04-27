@@ -3,7 +3,6 @@ package interceptors
 import (
 	"context"
 	"net"
-	"payment/internal/config"
 	"payment/proto/gen/payment"
 	"time"
 
@@ -25,6 +24,13 @@ type LimiterOpts struct {
 	BanDurations []time.Duration
 }
 
+type ValidateOpts struct {
+	MaxNameLength    int
+	MaxAmount        int64
+	MaxMessageLenght int
+	PaymentService   string
+}
+
 func LimiterInterceptor(lOpts LimiterOpts, limiter RateLimiter) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -37,6 +43,7 @@ func LimiterInterceptor(lOpts LimiterOpts, limiter RateLimiter) grpc.UnaryServer
 		// Плохо, потому что такое обрабатывать на стадии
 		// Сборки, а не на стадии рабочей функции, поэтому
 		// Оборочивать этот момент, и не юзать такое на проде (пока можно)
+
 		if !lOpts.Enabled {
 			return handler(ctx, req)
 		}
@@ -74,7 +81,7 @@ func extractIP(addr string) (string, error) {
 	return ip, nil
 }
 
-func ValidationInterceptor(cfg *config.Internal) grpc.UnaryServerInterceptor {
+func ValidationInterceptor(vOpts ValidateOpts) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req interface{},
@@ -85,7 +92,7 @@ func ValidationInterceptor(cfg *config.Internal) grpc.UnaryServerInterceptor {
 		if _, ok := req.(*payment.GetPaymentUrlRequest); !ok {
 			return nil, status.Error(codes.InvalidArgument, "invalid request type")
 		}
-		if err := ValidateGetPaymentUrl(cfg, req.(*payment.GetPaymentUrlRequest)); err != nil {
+		if err := ValidateGetPaymentUrl(vOpts, req.(*payment.GetPaymentUrlRequest)); err != nil {
 			return nil, err
 		}
 		return handler(ctx, req)
@@ -93,24 +100,24 @@ func ValidationInterceptor(cfg *config.Internal) grpc.UnaryServerInterceptor {
 	}
 }
 
-func ValidateGetPaymentUrl(cfg *config.Internal, req *payment.GetPaymentUrlRequest) error {
+func ValidateGetPaymentUrl(vOpts ValidateOpts, req *payment.GetPaymentUrlRequest) error {
 
 	if req.Name == "" {
 		return status.Error(codes.InvalidArgument, "name is required")
 	}
-	if len(req.Name) > cfg.MaxNameLength {
+	if len(req.Name) > vOpts.MaxNameLength {
 		return status.Error(codes.InvalidArgument, "name is too long max 40 characters allowed")
 	}
-	if len(req.Description) > cfg.MaxMessageLenght {
+	if len(req.Description) > vOpts.MaxMessageLenght {
 		return status.Error(codes.InvalidArgument, "description is too long, max 250 characters allowed")
 	}
 	if req.Amount <= 0 {
-		if req.Amount >= cfg.MaxAmount {
+		if req.Amount >= vOpts.MaxAmount {
 			return status.Error(codes.InvalidArgument, "amount exceeds the limit: 1000000")
 		}
 		return status.Error(codes.InvalidArgument, "amount must be positive")
 	}
-	if req.PaymentMethod != cfg.PaymentService {
+	if req.PaymentMethod != vOpts.PaymentService {
 		return status.Error(codes.InvalidArgument, "no such payment method exists")
 	}
 	if req.UserId == "" {

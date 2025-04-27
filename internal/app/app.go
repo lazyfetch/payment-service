@@ -22,15 +22,10 @@ type App struct {
 
 func New(log *slog.Logger, config *config.Config) *App {
 
-	// VERY temp and very shit
-	// t := time.Second * 5
-	//sender := eventsender.Sender{Log: log}
-	// sender.StartProcessEvents(context.Background(), t)
-
 	// payment service mock
 	gvkassa := &govnokassa.Govnokassa{}
 
-	// init db
+	// init db with opts
 	db := postgres.New(log, postgres.PostgresOpts{
 		User:     config.Postgres.User,
 		Password: config.Postgres.Password,
@@ -39,7 +34,7 @@ func New(log *slog.Logger, config *config.Config) *App {
 		DBname:   config.Postgres.DBname,
 	})
 
-	// init redis
+	// init redis with opts
 	cache := Redis.New(log, Redis.RedisOpts{
 		Host: config.Redis.Host,
 		Port: config.Redis.Port,
@@ -47,11 +42,7 @@ func New(log *slog.Logger, config *config.Config) *App {
 	})
 
 	// init compositor
-	composite := &storage.Composite{
-		DBProvider:    db,
-		CacheProvider: cache,
-		Log:           log,
-	}
+	composite := storage.New(log, db, cache, config.Internal.UserTTL)
 
 	// init generate service
 	generateService := generatesrv.New(log, db, composite, gvkassa)

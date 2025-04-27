@@ -185,11 +185,12 @@ func (r *Redis) GetMinAmount(ctx context.Context, userID string) (int64, error) 
 }
 
 // temp todo: провести конфиг для TTL нормально
-func (r *Redis) SetMinAmount(ctx context.Context, userID string, amount int64) error {
+func (r *Redis) SetMinAmount(ctx context.Context, userID string, amount int64, userTTL time.Duration) error {
 	const op = "Redis.SetMinAmount"
 	log := r.log.With(
 		slog.String("op", op),
 	)
+
 	temptime := time.Duration(time.Second * 500)
 
 	log.Info("start set")
