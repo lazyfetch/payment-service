@@ -1,7 +1,10 @@
 package metrics
 
-import "context"
+import (
+	"context"
+	"payment/internal/telemetry/config"
+)
 
-func NewMetricsProvider(ctx context.Context) (shutdown func(ctx context.Context) error, err error) {
-
+func NewMetricsProvider(cfg *config.Config) (shutdown func(ctx context.Context) error, err error) {
+	return
 }

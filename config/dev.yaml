@@ -28,4 +28,6 @@ rate_limiter:
   max_requests: 10
   ban_durations: ["5m", "10m", "15m", "30m", "60m"]
 telemetry:
-  
+  host: "localhost"
+  port: 4318
+  service_name: "payment-service"
