@@ -1,8 +1,8 @@
 package tracing
 
-import "go.opentelemetry.io/otel/trace"
+import "context"
 
-func NewTracerProvider() (*trace.TracerProvider, error) {
+func NewTracerProvider() (shutdown func(ctx context.Context) error, err error) {
 	// Здесь создаешь сам TracerProvider на основе конфига
 	return nil, nil
 }
