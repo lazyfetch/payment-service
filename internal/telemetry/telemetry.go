@@ -1,0 +1,5 @@
+package telemetry
+
+func New() {
+
+}
