@@ -9,6 +9,8 @@ import (
 	"payment/internal/lib/logger/sl"
 	"payment/internal/lib/uuid"
 	"payment/internal/storage"
+
+	"go.opentelemetry.io/otel"
 )
 
 var (
@@ -46,6 +48,11 @@ func New(log *slog.Logger, paymentsvr PaymentSaver, userprv UserProvider, paymen
 
 func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayment) (string, error) {
 	const op = "paymentService.GetPaymentURL"
+
+	tracer := otel.Tracer("payment-service")
+
+	ctx, span := tracer.Start(ctx, "service-create-payment")
+	defer span.End()
 
 	log := p.log.With(
 		slog.String("op", op),

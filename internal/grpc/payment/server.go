@@ -7,6 +7,7 @@ import (
 	generatesrv "payment/internal/service/generate"
 	payment "payment/proto/gen/payment"
 
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,6 +27,11 @@ func Register(gRPC *grpc.Server, paymentService PaymentService) {
 }
 
 func (s *serverAPI) GetPaymentUrl(ctx context.Context, req *payment.GetPaymentUrlRequest) (*payment.GetPaymentUrlResponse, error) {
+
+	tracer := otel.Tracer("payment-service")
+
+	ctx, span := tracer.Start(ctx, "create-payment")
+	defer span.End()
 
 	url, err := s.payment.GetPaymentURL(ctx, models.GRPCPayment{
 		Name:          req.Name,

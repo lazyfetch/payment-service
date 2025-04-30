@@ -11,7 +11,7 @@ import (
 func New(opts ...config.Option) (func(ctx context.Context) error, error) {
 
 	cfg := &config.Config{
-		ServiceName: "default-service",
+		ServiceName: "payment-service",
 		Insecure:    true,
 		Traces: config.TracesConfig{
 			Endpoint:     "localhost:4318",
