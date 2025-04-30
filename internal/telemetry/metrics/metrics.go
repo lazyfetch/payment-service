@@ -3,7 +3,6 @@ package metrics
 import (
 	"context"
 	"payment/internal/telemetry/config"
-	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
@@ -19,13 +18,15 @@ func NewMetricsProvider(cfg *config.Config) (shutdown func(ctx context.Context) 
 	if cfg.Insecure {
 		opts = append(opts, otlpmetrichttp.WithInsecure())
 	}
+	opts = append(opts, otlpmetrichttp.WithCompression(otlpmetrichttp.GzipCompression))
+	opts = append(opts, otlpmetrichttp.WithURLPath("/v1/metrics"))
 
 	exp, err := otlpmetrichttp.New(context.Background(), opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	reader := metric.NewPeriodicReader(exp, metric.WithInterval(10*time.Second))
+	reader := metric.NewPeriodicReader(exp, metric.WithInterval(cfg.Metrics.Interval))
 
 	mp := metric.NewMeterProvider(
 		metric.WithReader(reader),

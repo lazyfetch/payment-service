@@ -44,8 +44,38 @@ func WithService(s string) Option {
 }
 
 // true = no SSL certificate
-func WithInsecure() Option {
+func WithInsecure(b bool) Option {
 	return func(c *Config) {
 		c.Insecure = true
+	}
+}
+
+func MetricsWithTimeout(t time.Duration) Option {
+	return func(c *Config) {
+		c.Metrics.Timeout = t
+	}
+}
+
+func MetricsWithInterval(t time.Duration) Option {
+	return func(c *Config) {
+		c.Metrics.Interval = t
+	}
+}
+
+func TracesWithTimeout(t time.Duration) Option {
+	return func(c *Config) {
+		c.Traces.Timeout = t
+	}
+}
+
+func TracesWithSampler(s string) Option {
+	return func(c *Config) {
+		c.Traces.Sampler = s
+	}
+}
+
+func TracesWithRatio(f float64) Option {
+	return func(c *Config) {
+		c.Traces.SamplerRatio = f
 	}
 }

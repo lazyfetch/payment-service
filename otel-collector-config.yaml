@@ -1,12 +1,16 @@
 receivers:
   otlp:
     protocols:
-      grpc:
       http:
+        endpoint: "0.0.0.0:4318"  # было localhost:4318 — это основная проблема
+        include_metadata: true
+      grpc:
+        endpoint: "0.0.0.0:4317"
+
 
 exporters:
-  jaeger:
-    endpoint: "http://jaeger:14250"
+  otlp:
+    endpoint: "jaeger:4317"
     tls:
       insecure: true
   prometheus:
@@ -16,7 +20,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [jaeger]
+      exporters: [otlp]  # <- сюда тоже otlp, а не jaeger
     metrics:
       receivers: [otlp]
       exporters: [prometheus]

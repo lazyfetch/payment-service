@@ -36,3 +36,6 @@ telemetry:
     sampler: "always_on" # always_off, parent_based
     ratio_based: 0.5 # 50% all of traces will saving 
   metrics:
+    endpoint: "localhost:4318"
+    timeout: "5s" # time for push in OTLP 
+    interval: "5s" # time for collect metrics

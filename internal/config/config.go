@@ -16,6 +16,7 @@ type Config struct {
 	Webhook     WebhookConfig  `yaml:"webhook"`
 	Internal    Internal       `yaml:"internal"`
 	RateLimiter RateLimiter    `yaml:"rate_limiter"`
+	Telemetry   Telemetry      `yaml:"telemetry"`
 }
 
 type GRPCConfig struct {
@@ -55,6 +56,26 @@ type RateLimiter struct {
 	Window       time.Duration   `yaml:"window"`
 	MaxRequests  int             `yaml:"max_requests"`
 	BanDurations []time.Duration `yaml:"ban_durations"`
+}
+
+type Telemetry struct {
+	ServiceName string        `yaml:"service_name"`
+	Insecure    bool          `yaml:"insecure"`
+	Traces      TracesConfig  `yaml:"traces"`
+	Metrics     MetricsConfig `yaml:"metrics"`
+}
+
+type TracesConfig struct {
+	Endpoint     string        `yaml:"endpoint"`
+	Timeout      time.Duration `yaml:"timeout"`
+	Sampler      string        `yaml:"sampler"`
+	SamplerRatio float64       `yaml:"ratio_based"`
+}
+
+type MetricsConfig struct {
+	Endpoint string        `yaml:"endpoint"`
+	Timeout  time.Duration `yaml:"timeout"`
+	Interval time.Duration `yaml:"interval"`
 }
 
 func MustLoad() *Config {
