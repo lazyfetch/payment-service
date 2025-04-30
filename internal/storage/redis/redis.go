@@ -9,11 +9,13 @@ import (
 	"payment/internal/domain/models"
 	"payment/internal/lib/logger/sl"
 	"payment/internal/storage"
+	"payment/internal/telemetry/tracing"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type RedisOpts struct {
@@ -156,6 +158,9 @@ func (r *Redis) SendEvent(ctx context.Context, payload models.Event) error {
 func (r *Redis) GetMinAmount(ctx context.Context, userID string) (int64, error) {
 	const op = "Redis.GetMinAmount"
 
+	ctx, span := tracing.StartSpan(ctx, "Redis GetMinAmount", attribute.String("user_id", userID))
+	defer span.End()
+
 	log := r.log.With(
 		slog.String("op", op),
 		slog.String("user_id", userID),
@@ -170,6 +175,7 @@ func (r *Redis) GetMinAmount(ctx context.Context, userID string) (int64, error) 
 			log.Warn("user_id not exists")
 			return 0, storage.ErrUserIDNotExists
 		}
+		span.RecordError(err)
 		log.Error("failed to check", sl.Err(err))
 		return 0, fmt.Errorf("%s:%w", op, err)
 	}
@@ -177,6 +183,7 @@ func (r *Redis) GetMinAmount(ctx context.Context, userID string) (int64, error) 
 	minAmount, err := strconv.ParseInt(value, 10, 64)
 
 	if err != nil {
+		span.RecordError(err)
 		log.Error("error to parse integer", sl.Err(err))
 	}
 
@@ -187,17 +194,22 @@ func (r *Redis) GetMinAmount(ctx context.Context, userID string) (int64, error) 
 // temp todo: провести конфиг для TTL нормально
 func (r *Redis) SetMinAmount(ctx context.Context, userID string, amount int64, userTTL time.Duration) error {
 	const op = "Redis.SetMinAmount"
+
+	ctx, span := tracing.StartSpan(ctx, "Redis SetMinAmount",
+		attribute.String("user_id", userID),
+		attribute.Int64("amount", amount))
+	span.End()
+
 	log := r.log.With(
 		slog.String("op", op),
 	)
-
-	temptime := time.Duration(time.Second * 500)
 
 	log.Info("start set")
 
 	key := buildKey(KeyMinAmount, userID)
 	// temp ttl value
-	if err := r.client.Set(ctx, key, amount, temptime).Err(); err != nil {
+	if err := r.client.Set(ctx, key, amount, userTTL).Err(); err != nil {
+		span.RecordError(err)
 		log.Error("failed to set", sl.Err(err))
 	}
 

@@ -1,15 +1,18 @@
 package govnokassa
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"payment/internal/domain/models"
+	"payment/internal/telemetry/tracing"
 )
 
 type Govnokassa struct{}
 
-func (g *Govnokassa) GeneratePaymentURL(data *models.DBPayment) (string, error) { // conditional realization
-
+func (g *Govnokassa) GeneratePaymentURL(ctx context.Context, data *models.DBPayment) (string, error) { // conditional realization
+	ctx, span := tracing.StartSpan(ctx, "Govnokassa GeneratePaymentURL")
+	defer span.End()
 	url := fmt.Sprintf("https://govnokassa.local/pay/inv_id=%s?user_id=%s", data.IdempotencyKey, data.UserID)
 
 	return url, nil

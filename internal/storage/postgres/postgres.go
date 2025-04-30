@@ -10,10 +10,12 @@ import (
 	"payment/internal/domain/models"
 	"payment/internal/lib/logger/sl"
 	"payment/internal/storage"
+	"payment/internal/telemetry/tracing"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type PostgresOpts struct {
@@ -61,6 +63,10 @@ func (s *Postgres) Stop() {
 func (s *Postgres) CreatePayment(ctx context.Context, data *models.DBPayment) error {
 	const op = "Postgres.CreatePayment"
 
+	ctx, span := tracing.StartSpan(ctx, "Postgres CreatePayment",
+		attribute.String("user_id", data.UserID))
+	defer span.End()
+
 	log := s.log.With(
 		slog.String("op", op),
 		slog.String("user_id", data.UserID),
@@ -74,11 +80,13 @@ func (s *Postgres) CreatePayment(ctx context.Context, data *models.DBPayment) er
 	`, data.IdempotencyKey, data.Name, data.Description, data.Amount, data.UserID, data.Status, data.CreatedAt, data.UpdatedAt)
 
 	if err != nil {
+		span.RecordError(err)
 		log.Error("unexpected error", sl.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	if num := cmd.RowsAffected(); num != 1 {
+		span.RecordError(fmt.Errorf("unexpected number of rows affected: %d", num)) // temp
 		log.Error("failed to affect on row")
 		return fmt.Errorf("unexpected number of rows affected: %d", num)
 	}
@@ -149,6 +157,10 @@ func (s *Postgres) GetMinAmount(ctx context.Context, userID string) (int64, erro
 	const op = "Postgres.GetMinAmount"
 	var minAmount int64
 
+	ctx, span := tracing.StartSpan(ctx, "Postgres GetMinAmount",
+		attribute.String("user_id", userID))
+	defer span.End()
+
 	log := s.log.With(
 		slog.String("op", op),
 		slog.String("user_id", userID),
@@ -159,9 +171,11 @@ func (s *Postgres) GetMinAmount(ctx context.Context, userID string) (int64, erro
 	err := s.Conn.QueryRow(ctx, "SELECT min_amount FROM users WHERE user_id=$1", userID).Scan(&minAmount)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			span.RecordError(err)
 			log.Info("user_id not found")
 			return 0, storage.ErrUserIDNotFound
 		}
+		span.RecordError(err)
 		log.Error("failed to check user", sl.Err(err))
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}

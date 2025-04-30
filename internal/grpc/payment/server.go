@@ -5,9 +5,9 @@ import (
 	"errors"
 	"payment/internal/domain/models"
 	generatesrv "payment/internal/service/generate"
+	"payment/internal/telemetry/tracing"
 	payment "payment/proto/gen/payment"
 
-	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -28,9 +28,7 @@ func Register(gRPC *grpc.Server, paymentService PaymentService) {
 
 func (s *serverAPI) GetPaymentUrl(ctx context.Context, req *payment.GetPaymentUrlRequest) (*payment.GetPaymentUrlResponse, error) {
 
-	tracer := otel.Tracer("payment-service")
-
-	ctx, span := tracer.Start(ctx, "create-payment")
+	ctx, span := tracing.StartSpan(ctx, "GRPC GetPaymentUrl")
 	defer span.End()
 
 	url, err := s.payment.GetPaymentURL(ctx, models.GRPCPayment{
@@ -42,11 +40,14 @@ func (s *serverAPI) GetPaymentUrl(ctx context.Context, req *payment.GetPaymentUr
 	})
 	if err != nil {
 		if errors.Is(err, generatesrv.ErrInvalidUserID) {
+			span.RecordError(err)
 			return nil, status.Error(codes.InvalidArgument, "user_id not found")
 		}
 		if errors.Is(err, generatesrv.ErrAmountTooSmall) {
+			span.RecordError(err)
 			return nil, status.Error(codes.InvalidArgument, "amount is too smail")
 		}
+		span.RecordError(err)
 		return nil, status.Error(codes.Internal, "failed to generate url")
 	}
 

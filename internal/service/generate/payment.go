@@ -9,8 +9,9 @@ import (
 	"payment/internal/lib/logger/sl"
 	"payment/internal/lib/uuid"
 	"payment/internal/storage"
+	"payment/internal/telemetry/tracing"
 
-	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -23,7 +24,7 @@ type UserProvider interface {
 }
 
 type GeneratePaymentURL interface {
-	GeneratePaymentURL(data *models.DBPayment) (string, error)
+	GeneratePaymentURL(ctx context.Context, data *models.DBPayment) (string, error)
 }
 
 type PaymentSaver interface {
@@ -49,9 +50,10 @@ func New(log *slog.Logger, paymentsvr PaymentSaver, userprv UserProvider, paymen
 func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayment) (string, error) {
 	const op = "paymentService.GetPaymentURL"
 
-	tracer := otel.Tracer("payment-service")
+	ctx, span := tracing.StartSpan(ctx, "Service GetPaymentUrl",
+		attribute.String("user_id", req.UserID),
+		attribute.String("payment_method", req.PaymentMethod))
 
-	ctx, span := tracer.Start(ctx, "service-create-payment")
 	defer span.End()
 
 	log := p.log.With(
@@ -66,14 +68,17 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 
 	if err != nil {
 		if errors.Is(err, storage.ErrUserIDNotExists) {
+			span.RecordError(err)
 			log.Error("user_id not found")
 			return "", ErrInvalidUserID
 		}
+		span.RecordError(err)
 		log.Error("failed to check min_amount", sl.Err(err))
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	if req.Amount < minAmount {
+		span.RecordError(ErrAmountTooSmall)
 		log.Error("min_amount too small")
 		return "", ErrAmountTooSmall
 	}
@@ -83,14 +88,16 @@ func (p *PaymentService) GetPaymentURL(ctx context.Context, req models.GRPCPayme
 	payment := models.MapGRPCToDB(&req, idempotencyKey)
 
 	// передаем в GOVNOKASSA edition генератор
-	paymentURL, err := p.paymentgen.GeneratePaymentURL(payment)
+	paymentURL, err := p.paymentgen.GeneratePaymentURL(ctx, payment)
 	if err != nil {
+		span.RecordError(err)
 		log.Error("failed to create payment url", sl.Err(err))
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	// записываем в бд наш созданный платеж
 	if err := p.paymentsvr.CreatePayment(ctx, payment); err != nil {
+		span.RecordError(err)
 		log.Error("failed to create payment", sl.Err(err))
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
