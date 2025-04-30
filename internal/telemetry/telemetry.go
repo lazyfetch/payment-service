@@ -9,11 +9,7 @@ import (
 
 func New(opts ...config.Option) (func(ctx context.Context), error) {
 
-	cfg := &config.Config{
-		Endpoint: "localhost:4317",
-		Service:  "default",
-		Insecure: false,
-	}
+	cfg := &config.Config{}
 
 	for _, opt := range opts {
 		opt(cfg)

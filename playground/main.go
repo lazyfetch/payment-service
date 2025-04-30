@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 )
 
 func main() {
@@ -32,6 +32,7 @@ func main() {
 func doSomething(ctx context.Context) {
 	tracer := otel.Tracer("example-tracer")
 	_, span := tracer.Start(ctx, "doSomething-span")
+
 	defer span.End()
 
 	fmt.Println("Doing something important...")
@@ -53,6 +54,11 @@ func initTracer() (*sdktrace.TracerProvider, error) {
 			semconv.SchemaURL,
 			semconv.ServiceName("example-service"),
 		)),
+		sdktrace.WithSampler(
+			sdktrace.ParentBased(
+				sdktrace.TraceIDRatioBased(0.1),
+			),
+		),
 	)
 	otel.SetTracerProvider(tp)
 	return tp, nil

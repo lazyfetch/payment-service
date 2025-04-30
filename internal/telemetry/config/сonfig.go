@@ -3,16 +3,14 @@ package config
 import "time"
 
 type Config struct {
-	Enabled     bool
 	ServiceName string
 	Insecure    bool
-	Trace       TraceConfig
+	Traces      TracesConfig
 	Metrics     MetricsConfig
 }
 
-type TraceConfig struct {
+type TracesConfig struct {
 	Endpoint     string
-	Headers      map[string]string
 	Timeout      time.Duration
 	Sampler      string
 	SamplerRatio float64
@@ -26,18 +24,28 @@ type MetricsConfig struct {
 
 type Option func(*Config)
 
-func WithEndpoint(e string) Option {
-	return func(t *Config) {
-		t.Endpoint = e
+func TracesWithEndpoint(s string) Option {
+	return func(c *Config) {
+		c.Traces.Endpoint = s
 	}
 }
 
+func MetricsWithEndpoint(s string) Option {
+	return func(c *Config) {
+		c.Metrics.Endpoint = s
+	}
+}
+
+// Setup service name
 func WithService(s string) Option {
-	return func(t *Config) {
-		t.Service = s
+	return func(c *Config) {
+		c.ServiceName = s
 	}
 }
 
+// true = no SSL certificate
 func WithInsecure() Option {
-
+	return func(c *Config) {
+		c.Insecure = true
+	}
 }
