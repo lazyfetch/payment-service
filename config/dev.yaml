@@ -23,7 +23,7 @@ internal:
   max_message_lenght: 200
   payment_service: "Govnokassa"
 rate_limiter:
-  enabled: true
+  enabled: false
   window: "30s"
   max_requests: 10
   ban_durations: ["5m", "10m", "15m", "30m", "60m"]
@@ -33,7 +33,7 @@ telemetry:
   traces:
     endpoint: "localhost:4318"
     timeout: "5s" # time for push it on OTLP collector
-    sampler: "always_on" # always_off, parent_based
+    sampler: "parent_based" # always_on, always_off, parent_based
     ratio_based: 0.5 # 50% all of traces will saving 
   metrics:
     endpoint: "localhost:4318"
