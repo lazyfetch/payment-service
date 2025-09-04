@@ -1,5 +1,7 @@
 # Payment service beta v0.0.1
 
+_p.s this is my pet project_
+
 **Payment service** — A lightweight Golang wrapper for accepting payments on your website.  
 Generates payment links, stores data in Postgres, and pushes events to message brokers like Kafka or Redis.
 
