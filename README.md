@@ -88,9 +88,10 @@ Here is the current status and future plans for the project.
 - [x] Improved logging and structured error handling
 - [x] Database migrations setup
 - [x] Full Docker Compose development environment
+- [x] IP Limiter middleware for gRPC
+- [x] Add OpenTelemetry for distributed tracing
 
 #### 🛠️ Up Next
-- [ ] IP Limiter middleware for gRPC and HTTP endpoints
 - [ ] Implement a worker pool for the Outbox publisher for better throughput
 - [ ] Add CI/CD pipeline (e.g., GitHub Actions for build/test)
 - [ ] Add OpenTelemetry for distributed tracing
